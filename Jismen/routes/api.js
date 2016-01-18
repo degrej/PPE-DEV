@@ -238,28 +238,29 @@ router.get('/product/tag/:tag', function(req, res){
         res.send(false)
     }
   });*/
-req.getConnection(function(err, connection) {
-  if (err) res.send(err);
-  connection.query('Select Reference, Nom, LibelleSousCat, Tag, Prix, Description, NomCouleur, LibelleTaille, QuantiteStock from produit p, couleur c, taille t, sous_categorie sc where c.idCouleur=p.idCouleur and t.idTaille=p.idTaille and sc.idSousCat=p.idSousCat and Tag =\''+req.params.tag+'\'', function(err, rows, fields){
-    if(err) { console.log(err); return res.send(err); }
-    var my_tagproducts = [];
-    for (i = 0; i < rows.length; i++){
-      var my_tagproduct = { };
-      my_tagproduct._id = rows[i].Reference;
-      my_tagproduct.name = rows[i].Nom;
-      my_tagproduct.subcat = rows[i].LibelleSousCat;
-      my_tagproduct.tag = rows[i].Tag;
-      my_tagproduct.price = rows[i].Prix;
-      my_tagproduct.description = rows[i].Description;
-      my_tagproduct.color = rows[i].NomCouleur;
-      my_tagproduct.size_name = rows[i].LibelleTaille;
-      my_tagproduct.quantity = rows[i].QuantiteStock;
-      my_tagproducts.push(my_tagproduct);
-    }
-      res.json(my_tagproducts);
+  req.getConnection(function(err, connection) {
+    if (err) res.send(err);
+    connection.query('Select Reference, Nom, LibelleSousCat, Tag, Prix, Description, Photo, NomCouleur, LibelleTaille, QuantiteStock from produit p, couleur c, taille t, sous_categorie sc where c.idCouleur=p.idCouleur and t.idTaille=p.idTaille and sc.idSousCat=p.idSousCat and Tag =\''+req.params.tag+'\'', function(err, rows, fields){
+      if(err) { console.log(err); return res.send(err); }
+      var my_tagproducts = [];
+      for (i = 0; i < rows.length; i++){
+        var my_tagproduct = { };
+        my_tagproduct._id = rows[i].Reference;
+        my_tagproduct.name = rows[i].Nom;
+        my_tagproduct.subcat = rows[i].LibelleSousCat;
+        my_tagproduct.tag = rows[i].Tag;
+        my_tagproduct.price = rows[i].Prix;
+        my_tagproduct.description = rows[i].Description;
+        my_tagproduct.picture = rows[i].Photo;
+        my_tagproduct.color = rows[i].NomCouleur;
+        my_tagproduct.size_name = rows[i].LibelleTaille;
+        my_tagproduct.quantity = rows[i].QuantiteStock;
+        my_tagproducts.push(my_tagproduct);
+      }
+        res.json(my_tagproducts);
+      });
     });
   });
-});
 
 
 // Retourne tous les produits de la catégorie donnée
@@ -275,19 +276,24 @@ router.get('/product/cat/:cat', function(req, res){
     }
   });*/
   req.getConnection(function(err, connection) {
-    if (err) res.send(err);
-
-    connection.query('SELECT Nom, LibelleCat,LibelleSousCat FROM Categorie Ca, Sous_Categorie SC WHERE Ca.idCat = SC.idSousCat AND P.idSousCat = SC.idSousCat', function(err, rows, fields) {
-      if (err) res.send(err);
-      var my_produits = [];
-      for (var i = 0; i < rows.length; i++)
-      {
-        var my_produit = { };
-        my_produit.categorie.name = rows[i].Libelle;
-        my_produit.subcat.subcat_name = rows[i].Libelle;
-        my_produit.name = rows[i].Nom;
-        my_produits.push(my_produit);
-      }
+  if (err) res.send(err);
+  connection.query('Select Reference, Nom, LibelleSousCat, Tag, Prix, Description, Photo, NomCouleur, LibelleTaille, QuantiteStock from produit p, couleur c, taille t, sous_categorie sc where c.idCouleur=p.idCouleur and t.idTaille=p.idTaille and sc.idSousCat=p.idSousCat and LibelleSousCat =\''+req.params.cat+'\'', function(err, rows, fields){
+    if(err) { console.log(err); return res.send(err); }
+    var my_produits = [];
+    for (i = 0; i < rows.length; i++){
+      var my_produit = { };
+      my_produit._id = rows[i].Reference;
+      my_produit.name = rows[i].Nom;
+      my_produit.subcat = rows[i].LibelleSousCat;
+      my_produit.tag = rows[i].Tag;
+      my_produit.price = rows[i].Prix;
+      my_produit.description = rows[i].Description;
+      my_produit.picture = rows[i].Photo;
+      my_produit.color = rows[i].NomCouleur;
+      my_produit.size_name = rows[i].LibelleTaille;
+      my_produit.quantity = rows[i].QuantiteStock;
+      my_produits.push(my_produit);
+    }
       res.json(my_produits);
     });
   });
