@@ -10,6 +10,17 @@ var jwt         = require('jsonwebtoken');
 var config      = require('./conf');
 
 // connexion à la DB
+var mysql = require('mysql'), // node-mysql module
+    myConnection = require('express-myconnection'), // express-myconnection module
+    dbOptions = {
+      host: 'localhost',
+      user: 'root',
+      password: '',
+      database: 'jismen'
+    };
+  
+app.use(myConnection(mysql, dbOptions, 'single'));
+
 mongoose.connect(config.db, function(err){
   if (err){
     console.log('Erreur de connexion : ' + err);
