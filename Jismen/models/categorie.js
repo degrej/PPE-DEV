@@ -1,3 +1,4 @@
+// modélisation des antités en base gérer par mongoose
 var mongoose = require('mongoose');
 var Schema = mongoose.Schema;
 

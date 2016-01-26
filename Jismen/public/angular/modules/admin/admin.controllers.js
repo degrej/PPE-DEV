@@ -7,6 +7,11 @@ var adminControllers = angular.module('adminControllers', []);
 admin.controller('AdminCtrl', [
   '$scope', '$http', '$window', '$location', 'usersFactory', 'productsFactory', 'commentsFactory',
   function($scope, $http, $window, $location, usersFactory, productsFactory, commentsFactory){
+  // scope = ce qu'on renvoi à la page
+  // http c'est ce qui fais les requetes serveurs
+  // window gérer la fenêtre rafraichissement redirection
+  // location sert à gérer les urls (ex redirection)
+  // Factory convention de nomage entité de la base
 
 
   usersFactory.getAllUsers()
@@ -29,7 +34,9 @@ admin.controller('AdminCtrl', [
 
 }]);
 
-admin.controller('LoginCtrl', ['$scope', '$location', '$window', 'loginFactory', function($scope, $location, $window, loginFactory){
+admin.controller('LoginCtrl', [
+  '$scope', '$location', '$window', 'loginFactory',
+  function($scope, $location, $window, loginFactory){
   $scope.email = "";
   $scope.password = "";
 
@@ -106,6 +113,7 @@ function($scope, $location, usersFactory, productsFactory){
     tel: ""
   }
   $scope.createUser = function(user){
+    // confirm permet d'ouvrir une popup
     if(confirm('Créer l\'utilisateur ?')){
       // console.log(user);
       usersFactory.addUser(user);

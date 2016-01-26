@@ -74,6 +74,7 @@ adminServices.factory('usersFactory', ['$http', function($http){
     getUser: function(user){
       return $http.get('/api/user/'+user);
     },
+    // put permet la modification
     updateUser: function(user){
       return $http.put('/api/user/', {user: user});
     },
@@ -81,7 +82,7 @@ adminServices.factory('usersFactory', ['$http', function($http){
       return $http.delete('/api/user/'+user);
     },
     addUser: function(user){
-      return $http.post('/api/user/',{user: user});
+      console.log($http.post('/api/user/',{user: user}));
     }
   };
 }]);

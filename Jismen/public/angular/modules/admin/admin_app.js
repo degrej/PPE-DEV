@@ -7,9 +7,9 @@ admin.config(['$httpProvider', function($httpProvider){
 admin.config(['$routeProvider', '$locationProvider', function($routeProvider, $locationProvider){
   $routeProvider
     .when('/', {
-      templateUrl: 'angular/modules/admin/partials/admin.html',
+      templateUrl: 'angular/modules/admin/partials/admin.html', // partial qui est rendu
       controller: 'AdminCtrl',
-      access: {authed: true}
+      access: {authed: true} // peut avoir des contraintres 
     })
     .when('/login', {
       templateUrl: 'angular/modules/admin/partials/login.html',

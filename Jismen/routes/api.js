@@ -1,5 +1,5 @@
 var express   = require('express');
-var jwt       = require('jsonwebtoken');
+var jwt       = require('jsonwebtoken'); // permet de vérifier l'authentification
 var app       = require('../app')
 var ObjectId  = require('mongoose').Types.ObjectId;
 var router    = express.Router();
