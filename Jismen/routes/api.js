@@ -28,10 +28,10 @@ router.get('/user/all', function(req, res){
   });*/
   // Récupération de la connexion à la base MySQL
   req.getConnection(function(err, connection) {
-    if (err) res.send(err);
+    if(err) return next(err);
 
     connection.query('SELECT idUtilisateur,Nom,Prenom,role FROM utilisateur', function(err, rows, fields) {
-      if (err) res.send(err);
+      if(err) return next(err);
       var my_users = [];
       for (var i = 0; i < rows.length; i++)
       {
@@ -62,7 +62,7 @@ router.get('/user/:user_id', function(req, res){
     }
   });*/
   req.getConnection(function(err, connection) {
-    if (err) res.send(err);
+    if(err) return next(err);
 
     connection.query('SELECT * FROM utilisateur U, client C WHERE U.idUtilisateur = C.idUtilisateur AND U.idUtilisateur = ' + req.params.user_id, function(err, rows, fields) {
       var my_user = {};
@@ -70,13 +70,13 @@ router.get('/user/:user_id', function(req, res){
       if (rows.length > 0) 
       {
         my_user._id = rows[0].idUtilisateur;
-        my_user.name = rows[0].Nom;
-        my_user.firstname = rows[0].Prenom;
+        my_user.name = rows[0].nom;
+        my_user.firstname = rows[0].prenom;
         my_user.email = rows[0].mail;
-        my_user.tel = rows[0].Tel;
+        my_user.tel = rows[0].tel;
         my_user.address = rows[0].adresse;
         my_user.zipcode = rows[0].CP;
-        my_user.city = rows[0].Ville;
+        my_user.city = rows[0].ville;
       }
 
       res.json(my_user);
@@ -87,29 +87,46 @@ router.get('/user/:user_id', function(req, res){
 ////// methode : POST //////
 
 // Crée un nouvel utilisateur
-router.post('/user/', function(req, res){
-  User.findOne({email: req.body.user.email}, function(err, user){
-    if(err){
-      res.send({success: false, message: err})
-    }else {
-      if(user){
-        res.send({success: false, message: 'Cette adresse mail est déjà utilisée.'});
-      }else{
-        var user = new User(req.body.user);
-        user.save(req.body.user, function(err, user){
-          if(err) res.send({success: false, message: err});
-          else res.send({success: true, user:user});
-        });
-      }
-    }
-  })
+router.post('/user/', function(req, res, next){
+  /*User.findOne({email: req.body.user.email}, function(err, user){
+    if(err) return next(err);
+
+    if(user) return res.send({ success: false, message:'Adresse email utilisée'});
+
+    User.create(req.body.user, function(err, retrievedUser) {
+      if(err) return next(err);
+
+      return res.send({ success: true, user: retrievedUser});
+    });
+  });*/
+  
+  req.getConnection(function(err, connection) {
+    if(err) return next(err);
+    connection.query("INSERT INTO utilisateur(nom, prenom, tel, mail, mdp, role) VALUES (?, ?, ?, ?, ?, ?)", [req.body.user.name, req.body.user.firstname, req.body.user.tel, req.body.user.email, req.body.user.password, req.body.user.role], function(err, result) {
+      if(err) return next(err);
+
+      if(!result) return res.send({ success: false, message:'No result from MYSql'});
+      if(req.body.user.role !== 'client')
+        return res.send({ success: true, result: result });
+      
+      // From here, we are sure that our user is a client
+      var userId = result.insertId;
+      connection.query("INSERT INTO client(idUtilisateur) VALUES (?,?,?)", [userId], function(err, result) {
+        if(err) return next(err);
+
+        if(!result) return res.send({ success: false, message: 'No result from MySQL Client request'});
+
+        return res.send({ success: true, result: result});
+      })
+    });
+  });
 });
 
 // Retourne l'utilisateur correspondant au login + mdp
-router.post('/user/auth', function(req, res){
+router.post('/user/auth', function(req, res, next){
   User.findOne({email: req.body.email},function(err, user){
     if (err)
-      throw err;
+      return next(err);
     if (!user)
       res.json({success: false, message: 'Utilisateur inconnu'});
     else{
@@ -162,10 +179,10 @@ router.get('/product/all', function(req, res){
     }
   });*/
    req.getConnection(function(err, connection) {
-    if (err) res.send(err);
+    if(err) return next(err);
 
     connection.query('SELECT p.nom, s.LibelleSousCat FROM produit p, Sous_Categorie s WHERE s.idSousCat = p.idSousCat', function(err, rows, fields) {
-      if (err) res.send(err);
+      if(err) return next(err);
 
       var my_produits = [];
       for (var i = 0; i < rows.length; i++)
@@ -195,7 +212,7 @@ router.get('/product/:product_id', function(req, res, next){
     }
   });*/
   req.getConnection(function(err, connection) {
-    if (err) res.send(err);
+    if(err) return next(err);
 
     connection.query('Select Reference, Nom, Prix, Tag, Description, NomCouleur, LibelleTaille, QuantiteStock from Produit p, Couleur c, Taille t where c.idCouleur=p.idCouleur and t.idTaille=p.idTaille and p.Reference=\'' + req.params.product_id +'\'', function(err, rows, fiels){
       var my_product = {};
@@ -239,7 +256,7 @@ router.get('/product/tag/:tag', function(req, res){
     }
   });*/
 req.getConnection(function(err, connection) {
-  if (err) res.send(err);
+  if(err) return next(err);
   connection.query('Select Reference, Nom, LibelleSousCat, Tag, Prix, Description, NomCouleur, LibelleTaille, QuantiteStock from produit p, couleur c, taille t, sous_categorie sc where c.idCouleur=p.idCouleur and t.idTaille=p.idTaille and sc.idSousCat=p.idSousCat and Tag =\''+req.params.tag+'\'', function(err, rows, fields){
     if(err) { console.log(err); return res.send(err); }
     var my_tagproducts = [];
@@ -275,10 +292,10 @@ router.get('/product/cat/:cat', function(req, res){
     }
   });*/
   req.getConnection(function(err, connection) {
-    if (err) res.send(err);
+    if(err) return next(err);
 
     connection.query('SELECT Nom, LibelleCat,LibelleSousCat FROM Categorie Ca, Sous_Categorie SC WHERE Ca.idCat = SC.idSousCat AND P.idSousCat = SC.idSousCat', function(err, rows, fields) {
-      if (err) res.send(err);
+      if(err) return next(err);
       var my_produits = [];
       for (var i = 0; i < rows.length; i++)
       {
@@ -413,12 +430,12 @@ router.get('/categorie/all', function(req, res){
     }
   });*/
   req.getConnection(function(err, connection) {
-      if (err) res.send(err);
+      if(err) return next(err);
 
       connection.query('SELECT idCat,LibelleCat FROM categorie', function(err, rows, fields) {
-        if (err) res.send(err);
+        if(err) return next(err);
         connection.query('Select idCat, LibelleSousCat from Sous_Categorie', function(err, souscat, fields){
-          if (err) res.send(err);
+          if(err) return next(err);
         
           var my_categories = [];
           for (var i = 0; i < rows.length; i++)

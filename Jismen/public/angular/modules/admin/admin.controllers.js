@@ -136,8 +136,8 @@ admin.controller('ProductsCtrl', ['$scope', '$http', '$location', 'productsFacto
     $scope.products = products;
   });
 
-  $scope.selectProduct = function(product){
-    $location.path('/products/'+product);
+  $scope.selectProduct = function(productId){
+    $location.path('/products/'+productId);
   };
 }]);
 
