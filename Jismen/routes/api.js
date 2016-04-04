@@ -8,6 +8,7 @@ var Product   = require('../models/product');
 var Categorie = require('../models/categorie');
 var Comment   = require('../models/comment');
 var mysql     = require('mysql');
+var async     = require('async');
 
 
 /******** Users *********/
@@ -15,29 +16,20 @@ var mysql     = require('mysql');
 ////// methode : GET //////
 
 // methode : GET Retourne tous les utilisateurs
-router.get('/user/all', function(req, res){
-  /*User.find(function(err, users){
-    if(err)
-      res.send(err);
-    else {
-      if (users)
-        res.json(users);
-      else
-        res.send(false);
-    }
-  });*/
+router.get('/admin/api/user/all',function(req,res){
+  console.log(req.user);
   // Récupération de la connexion à la base MySQL
-  req.getConnection(function(err, connection) {
+  req.getConnection(function(err,connection) {
     if(err) return next(err);
 
-    connection.query('SELECT idUtilisateur,Nom,Prenom,role FROM utilisateur', function(err, rows, fields) {
+    connection.query('SELECT idUtilisateur,nom,Prenom,role FROM utilisateur',function(err,rows,fields) {
       if(err) return next(err);
       var my_users = [];
       for (var i = 0; i < rows.length; i++)
       {
         var my_user = { };
         my_user._id = rows[i].idUtilisateur;
-        my_user.name = rows[i].Nom;
+        my_user.name = rows[i].nom;
         my_user.firstname = rows[i].Prenom;
         my_user.role = rows[i].role;
         my_users.push(my_user);
@@ -48,117 +40,221 @@ router.get('/user/all', function(req, res){
 });
 
 // methode : GET Retourne l'utilisateur dont l'id est donnée
-router.get('/user/:user_id', function(req, res){
-  /*User.findOne(ObjectId(req.params.user_id), function(err, user){
-    if (err){
-      res.send(err);
-    }
-    else{
-      if(user){
-        res.json(user);
-      }else{
-        res.send(false);
-      }
-    }
-  });*/
-  req.getConnection(function(err, connection) {
+router.get('/admin/api/user/:user_id',function(req,res,next){
+  
+  req.getConnection(function(err,connection) {
     if(err) return next(err);
 
-    connection.query('SELECT * FROM utilisateur U, client C WHERE U.idUtilisateur = C.idUtilisateur AND U.idUtilisateur = ' + req.params.user_id, function(err, rows, fields) {
-      var my_user = {};
+      connection.query('Select U.idUtilisateur, U.nom, U.prenom, U.mail, U.role, U.mdp, U.tel, adresse, CP, ville from utilisateur U left join client c on C.idUtilisateur=U.idUtilisateur where U.idUtilisateur = ?', [req.params.user_id],function(err,rows,fields) {
+        if(err) {
+          return connection.rollback(function() {
+            return next(err);
+          });
+        }
+        var my_user = {};
 
-      if (rows.length > 0) 
-      {
-        my_user._id = rows[0].idUtilisateur;
-        my_user.name = rows[0].nom;
-        my_user.firstname = rows[0].prenom;
-        my_user.email = rows[0].mail;
-        my_user.tel = rows[0].tel;
-        my_user.address = rows[0].adresse;
-        my_user.zipcode = rows[0].CP;
-        my_user.city = rows[0].ville;
-      }
+        if (rows.length > 0) 
+        {
+          my_user._id = rows[0].idUtilisateur;
+          my_user.name = rows[0].nom;
+          my_user.firstname = rows[0].prenom;
+          my_user.email = rows[0].mail;
+          my_user.password = rows[0].mdp;
+          my_user.role = rows[0].role;
+          my_user.tel = rows[0].tel;
+          my_user.address = rows[0].adresse;
+          my_user.zipcode = rows[0].CP;
+          my_user.city = rows[0].ville;
+        }
 
-      res.json(my_user);
+        res.json(my_user);
+      });
     });
   });
-});
 
 ////// methode : POST //////
 
 // Crée un nouvel utilisateur
-router.post('/user/', function(req, res, next){
-  /*User.findOne({email: req.body.user.email}, function(err, user){
-    if(err) return next(err);
-
-    if(user) return res.send({ success: false, message:'Adresse email utilisée'});
-
-    User.create(req.body.user, function(err, retrievedUser) {
-      if(err) return next(err);
-
-      return res.send({ success: true, user: retrievedUser});
-    });
-  });*/
-  
+router.post('/admin/api/user', function(req, res, next) {
   req.getConnection(function(err, connection) {
     if(err) return next(err);
-    connection.query("INSERT INTO utilisateur(nom, prenom, tel, mail, mdp, role) VALUES (?, ?, ?, ?, ?, ?)", [req.body.user.name, req.body.user.firstname, req.body.user.tel, req.body.user.email, req.body.user.password, req.body.user.role], function(err, result) {
+              
+    var insertQuery;
+    var insertQueryParams;
+    switch(req.body.user.role) {
+      case 'administrateur':
+        insertQuery = 'call sp_createAdmin(?, ?, ?, ?, ?, ?)';
+        insertQueryParams = [req.body.user.name, req.body.user.firstname, req.body.user.tel, req.body.user.email, req.body.user.password, req.body.user.role];
+        break;
+      case 'magasinier':
+        insertQuery = 'call sp_createMagasinier(?, ?, ?, ?, ?, ?)';
+        insertQueryParams = [req.body.user.name, req.body.user.firstname, req.body.user.tel, req.body.user.email, req.body.user.password, req.body.user.role];
+        break;
+      case 'client':
+        insertQuery = 'call sp_createClient(?, ?, ?, ?, ?, ?, ?, ?, ?)';
+        insertQueryParams = [req.body.user.name, req.body.user.firstname, req.body.user.tel, req.body.user.email, req.body.user.password, req.body.user.role, req.body.user.address, req.body.user.zipcode, req.body.user.city];
+        break;
+    }
+    if(!insertQuery) {
+      return connection.rollback(function() {
+        return next(new Error("Unknown role for user: role=" + req.body.user.role));
+      });
+    }
+    
+    connection.query(insertQuery,insertQueryParams, function(err, result) {
       if(err) return next(err);
 
-      if(!result) return res.send({ success: false, message:'No result from MYSql'});
-      if(req.body.user.role !== 'client')
-        return res.send({ success: true, result: result });
-      
-      // From here, we are sure that our user is a client
-      var userId = result.insertId;
-      connection.query("INSERT INTO client(idUtilisateur) VALUES (?,?,?)", [userId], function(err, result) {
-        if(err) return next(err);
+        return res.send({ success: true });
+    });
+  });
+});
 
-        if(!result) return res.send({ success: false, message: 'No result from MySQL Client request'});
 
-        return res.send({ success: true, result: result});
-      })
+
+// Sign up new client coté site
+router.post('/api/user/register', function(req, res, next) {
+  req.getConnection(function(err, connection) {
+    if(err) return next(err);
+
+      connection.query('call sp_createClient(?,?,?,?,?,"client",?,?,?)',[req.body.name, req.body.firstname, req.body.tel, req.body.email, req.body.password, req.body.address, req.body.zipcode, req.body.city], function(err, result) { 
+      if(err) return next(err);
+
+      return res.send({ success : true, message:"Votre inscription c'est bien passé. Veuillez vous connecter."});
     });
   });
 });
 
 // Retourne l'utilisateur correspondant au login + mdp
-router.post('/user/auth', function(req, res, next){
-  User.findOne({email: req.body.email},function(err, user){
-    if (err)
-      return next(err);
-    if (!user)
-      res.json({success: false, message: 'Utilisateur inconnu'});
-    else{
-      if (user.password != req.body.password){
-        res.json({success: false, message: "Mot de passe incorrect"});
-      }else{
-        var token = jwt.sign(user, app.get('secret'),{expiresInMinutes: 60,});
-        res.json({
-          success: true,
-          message: 'Auth : ok',
-          token: token
-        });
+router.post('/api/user/auth',function(req,res,next){
+  
+  req.getConnection(function(err,connection) {
+    if(err) return next(err);
+
+    connection.query('Select idUtilisateur, prenom, mail, mdp, role from utilisateur where mail=?', [req.body.email], function(err, utilisateur) {
+      if(err) return next(err);
+
+      if (!utilisateur || !utilisateur.length)
+        return res.send({ success: false, message: 'Utilisateur inconnu' });
+
+      if(utilisateur.length > 1) {
+        return res.send({ success:false, message: 'Multiple users with same email'});
       }
-    }
+      
+      if (utilisateur[0].mdp != req.body.password) {
+          return res.send({ success: false, message: "Mot de passe incorrect" });
+      }
+      var redirect = "";
+      switch (utilisateur[0].role.toLowerCase())
+      {
+        case 'administrateur':
+          redirect = "/admin/";
+          break;
+        case 'client':
+          redirect = "/client/";
+          break;
+        case 'magasinier':
+          redirect = "/magasinier/";
+          break;
+      }
+      var token = jwt.sign({ id: utilisateur[0].idUtilisateur, role: utilisateur[0].role }, app.get('secret'), {expiresIn: 3600});
+      return res.send({ success: true, message: 'Auth : ok', token : token, role : utilisateur[0].role, redirectPath: redirect});
+    });
   });
 });
 
-////// methode : PUT //////
-router.put('/user/', function(req, res){
-  console.log(req.body.user._id);
-  var query = {_id: req.body.user._id};
-  User.update(query, req.body.user, function(err, response){
-    if (err) res.json({success : false, message: err});
-    else res.json({success: true, message: response});
+// Méthode PUT utilisateur
+router.put('/admin/api/user', function(req, res, next) {
+
+  var dbConnection;
+
+  async.series([
+    // On récupère la connection à la base de données
+    function(endGetConnection) {
+      req.getConnection(function(err, connection) {
+        if(err) return endGetConnection(err);
+
+        dbConnection = connection;
+
+        return endGetConnection();
+      });
+    },
+    // On commence une transaction SQL
+    function(endBeginTransaction) {
+      dbConnection.beginTransaction(function(err) {
+        if(err) return endBeginTransaction(err);
+
+        return endBeginTransaction();
+      });
+    },
+    // ON met à jour les infos dans la table utilisateur
+    function(endUpdateUser) {
+      dbConnection.query('UPDATE utilisateur set nom = ?, prenom = ?, tel = ?, mail = ?, mdp = ? where idUtilisateur = ?', [req.body.user.name, req.body.user.firstname, req.body.user.tel, req.body.user.email, req.body.user.password, req.body.user._id],function(err,rows,fields){
+        if(err) return endUpdateUser(err);
+
+        return endUpdateUser();
+      });
+    },
+    // On met à jour les infos dans la table lié au rôle de l'utilisateur
+    function(endUpdateUserRole) {
+      var updateQuery;
+      var paramsQuery;
+      switch (req.body.user.role.toLowerCase())
+      {
+        case 'administrateur':
+          updateQuery = 'UPDATE administrateur set nom = ?, prenom = ?, tel = ?, mail = ?, mdp = ? where idUtilisateur = ?';
+          paramsQuery = [req.body.user.name, req.body.user.firstname, req.body.user.tel, req.body.user.email, req.body.user.password, req.body.user._id]
+          break;
+        case 'client':
+          updateQuery = 'UPDATE client set nom = ?, prenom = ?, tel = ?, mail = ?, mdp = ?, adresse = ?, CP = ?, ville = ? where idUtilisateur = ?';
+          paramsQuery = [req.body.user.name, req.body.user.firstname, req.body.user.tel, req.body.user.email, req.body.user.password, req.body.user.address,req.body.user.zipcode, req.body.user.city, req.body.user._id];
+          break;
+        case 'magasinier':
+          updateQuery = 'UPDATE magasinier set nom = ?, prenom = ?, tel = ?, mail = ?, mdp = ? where idUtilisateur = ?';
+          paramsQuery = [req.body.user.name, req.body.user.firstname, req.body.user.tel, req.body.user.email, req.body.user.password, req.body.user._id]
+          break;
+      }
+      if(!updateQuery) {
+         return endUpdateUserRole(new Error("Un problème a eu lieu lors de la mise à jour"));
+      }
+    
+      dbConnection.query(updateQuery,paramsQuery, function(err, result) {
+        if(err) return endUpdateUserRole(err);
+
+          return endUpdateUserRole();
+      });
+    }
+  ], function(err) {
+    // Toutes les étapes ont été réalisés, on traite le cas où une erreur est survenue dans les fonctions précédentes sinon on envoi la réponse
+    if(err) { 
+      // On check que la connection a bien été ouvert: Dans le cas où la fonction responsable de la récupération de la connection échoue, c'est le seul moyen d'éviter un crash serveur
+      if(!dbConnection) return next(err);
+
+      // si on avait la connection ouverte, on rollback par sécurité
+      return dbConnection.rollback(function() {
+        return next(err);
+      });
+    }
+
+    // Si tout a fonctionné, on peut validé les changements en comittant la transaction SQL
+    dbConnection.commit(function(err) {
+      if(err) return next(err);
+
+      return res.json({ success: true});
+    });
   });
 });
 
 ////// methode : delete //////
-router.delete('/user/:userId', function(req, res){
-  User.remove({_id: req.params.userId}, function(err, response){
-    if (err) console.log(err);
-    else res.json({success: true, message: response});
+router.delete('/user/:userId',function(req,res, next){
+  req.getConnection(function(err,connection) {
+  if(err) return next(err);
+
+    connection.query('delete FROM utilisateur WHERE idUtilisateur = ? ', [req.params.userId],function(err,rows,fields) {
+      if(err) {
+          return next(err);
+        }
+        return res.send({ success: true });
+      });
   });
 });
 
@@ -167,29 +263,27 @@ router.delete('/user/:userId', function(req, res){
 ////// methode : GET //////
 
 // Retourne tous les produits
-router.get('/product/all', function(req, res){
-  /*Product.find(function(err, products){
-    if(err)
-      res.send(err);
-    else {
-      if (products)
-        res.json(products);
-      else
-        res.send(false);
-    }
-  });*/
-   req.getConnection(function(err, connection) {
+router.get('/api/product/all',function(req,res,next){
+  
+   req.getConnection(function(err,connection) {
     if(err) return next(err);
 
-    connection.query('SELECT p.nom, s.LibelleSousCat FROM produit p, Sous_Categorie s WHERE s.idSousCat = p.idSousCat', function(err, rows, fields) {
+    connection.query('SELECT p.nom, p.reference, p.prix, p.tag, p.description, p.photo, c.nomCouleur, libelleTaille, p.quantiteStock, s.libelleSousCat FROM produit p,Sous_Categorie s ,Couleur c WHERE s.idSousCat = p.idSousCat and c.NomCouleur=p.NomCouleur',function(err,rows,fields) {
       if(err) return next(err);
 
       var my_produits = [];
       for (var i = 0; i < rows.length; i++)
       {
         var my_produit = { };
-        my_produit.subcat_name = rows[i].LibelleSousCat;
+        my_produit.size = [{size_name:rows[i].libelleTaille,quantity:rows[i].quantiteStock}];
+        my_produit._id = rows[i].reference;
+        my_produit.subcat = rows[i].libelleSousCat;
         my_produit.name = rows[i].nom;
+        my_produit.price = rows[i].prix;
+        my_produit.tag = rows[i].tag;
+        my_produit.description = rows[i].description;
+        my_produit.picture = rows[i].photo;
+        my_produit.color = rows[i].nomCouleur;
         my_produits.push(my_produit);
       }
       res.json(my_produits);
@@ -198,28 +292,17 @@ router.get('/product/all', function(req, res){
 });
 
 // Retourne le produit dont l'id est passé en GET
-router.get('/product/:product_id', function(req, res, next){
-  
-  /*Product.findOne(ObjectId(req.params.product_id) , function(err, product){
-    if(err){
-      res.send(err);
-    } else {
-      if(product){
-        res.json(product);
-      }else {
-        res.send(false);
-      }
-    }
-  });*/
-  req.getConnection(function(err, connection) {
+router.get('/api/product/:product_id',function(req,res,next){
+  req.getConnection(function(err,connection) {
     if(err) return next(err);
 
-    connection.query('Select Reference, Nom, Prix, Tag, Description, NomCouleur, LibelleTaille, QuantiteStock from Produit p, Couleur c, Taille t where c.idCouleur=p.idCouleur and t.idTaille=p.idTaille and p.Reference=\'' + req.params.product_id +'\'', function(err, rows, fiels){
+    connection.query('SELECT p.nom, p.reference, p.prix, p.tag, p.description, p.photo, c.nomCouleur, libelleTaille, p.quantiteStock, s.libelleSousCat FROM produit p,Sous_Categorie s ,Couleur c where p.reference=\'' + req.params.product_id +'\'',function(err,rows,fiels){
       var my_product = {};
 
 
-      // On vient d'appeler la fonction query, elle nous fournit le paramètre err. Si err est renseigné, quelque chose c'est mal passé. Il ne faut pas continuer le code sinon on va accumuler les erreurs.
-      // Pour cela, on délègue généralement l'erreur à la prochaine route (qui est le error handler)
+      // On vient d'appeler la fonction query,elle nous fournit le paramètre err. Si err est renseigné,quelque chose c'est mal passé. Il ne faut 
+      //pas continuer le code sinon on va accumuler les erreurs.
+      // Pour cela,on délègue généralement l'erreur à la prochaine route (qui est le error handler)
       // Exemple:
       // if(err) return next(err);
       if(err) {
@@ -229,14 +312,15 @@ router.get('/product/:product_id', function(req, res, next){
 
       if (rows.length > 0)
       {
-        my_product._id = rows[0].Reference;
-        my_product.name = rows[0].Nom;
-        my_product.prix = rows[0].Prix;
-        my_product.tag = rows[0].Tag;
-        my_product.description = rows[0].Description;
-        my_product.color = rows[0].NomCouleur;
-        my_product.size_name = rows[0].LibelleTaille;
-        my_product.quantity = rows[0].QuantiteStock;
+        my_product._id = rows[0].reference;
+        my_product.name = rows[0].nom;
+        my_product.size = [{size_name:rows[0].libelleTaille,quantity:rows[0].quantiteStock}];
+        my_product.price = rows[0].prix;
+        my_product.tag = rows[0].tag;
+        my_product.description = rows[0].description;
+        my_product.color = rows[0].nomCouleur;
+        my_product.picture = rows[0].photo;
+        my_product.subcat = rows[0].libelleSousCat;
       }
       res.json(my_product);
     });
@@ -244,35 +328,30 @@ router.get('/product/:product_id', function(req, res, next){
 });
 
 // Retourne tous les produits avec le tag sélectionné
-router.get('/product/tag/:tag', function(req, res){
-  /*Product.find({tag: req.params.tag}, function(err, products){
-    if (err)
-      res.send(err);
-    else {
-      if (products)
-        res.json(products);
-      else
-        res.send(false)
-    }
-  });*/
-req.getConnection(function(err, connection) {
-  if(err) return next(err);
-  connection.query('Select Reference, Nom, LibelleSousCat, Tag, Prix, Description, NomCouleur, LibelleTaille, QuantiteStock from produit p, couleur c, taille t, sous_categorie sc where c.idCouleur=p.idCouleur and t.idTaille=p.idTaille and sc.idSousCat=p.idSousCat and Tag =\''+req.params.tag+'\'', function(err, rows, fields){
-    if(err) { console.log(err); return res.send(err); }
-    var my_tagproducts = [];
-    for (i = 0; i < rows.length; i++){
-      var my_tagproduct = { };
-      my_tagproduct._id = rows[i].Reference;
-      my_tagproduct.name = rows[i].Nom;
-      my_tagproduct.subcat = rows[i].LibelleSousCat;
-      my_tagproduct.tag = rows[i].Tag;
-      my_tagproduct.price = rows[i].Prix;
-      my_tagproduct.description = rows[i].Description;
-      my_tagproduct.color = rows[i].NomCouleur;
-      my_tagproduct.size_name = rows[i].LibelleTaille;
-      my_tagproduct.quantity = rows[i].QuantiteStock;
-      my_tagproducts.push(my_tagproduct);
-    }
+router.get('/api/product/tag/:tag',function(req,res,next){
+  
+  req.getConnection(function(err,connection) {
+    if(err) return next(err);
+
+    connection.query('Select reference,nom,libelleSousCat,tag,prix,description,photo,p.nomCouleur,libelleTaille,quantiteStock from produit p,couleur c,sous_categorie sc where c.NomCouleur=p.NomCouleur and sc.idSousCat=p.idSousCat and Tag =\''+req.params.tag+'\'',function(err,rows,fields){
+      if(err) return next(err);
+
+      var my_tagproducts = [];
+      for (var i = 0; i < rows.length; i++)
+      {
+        var my_tagproduct = { };
+        my_tagproduct._id = rows[i].reference;
+        my_tagproduct.name = rows[i].nom;
+        my_tagproduct.subcat = rows[i].libelleSousCat;
+        my_tagproduct.tag = rows[i].tag;
+        my_tagproduct.price = rows[i].prix;
+        my_tagproduct.description = rows[i].description;
+        my_tagproduct.picture = rows[i].photo;
+        my_tagproduct.color = rows[i].nomCouleur;
+        my_tagproduct.size_name = rows[i].libelleTaille;
+        my_tagproduct.quantity = rows[i].quantiteStock;
+        my_tagproducts.push(my_tagproduct);
+      }
       res.json(my_tagproducts);
     });
   });
@@ -280,31 +359,27 @@ req.getConnection(function(err, connection) {
 
 
 // Retourne tous les produits de la catégorie donnée
-router.get('/product/cat/:cat', function(req, res){
-  /*Product.find({subcat: req.params.cat}, function(err, products){
-    if(err)
-      res.send(err);
-    else {
-      if(products)
-        res.json(products);
-      else
-        res.send(false);
-    }
-  });*/
+router.get('/api/product/cat/:cat', function(req, res){
+  
   req.getConnection(function(err, connection) {
-    if(err) return next(err);
-
-    connection.query('SELECT Nom, LibelleCat,LibelleSousCat FROM Categorie Ca, Sous_Categorie SC WHERE Ca.idCat = SC.idSousCat AND P.idSousCat = SC.idSousCat', function(err, rows, fields) {
-      if(err) return next(err);
-      var my_produits = [];
-      for (var i = 0; i < rows.length; i++)
-      {
-        var my_produit = { };
-        my_produit.categorie.name = rows[i].Libelle;
-        my_produit.subcat.subcat_name = rows[i].Libelle;
-        my_produit.name = rows[i].Nom;
-        my_produits.push(my_produit);
-      }
+  if (err) res.send(err);
+  connection.query('Select Reference, Nom, LibelleSousCat, Tag, Prix, Description, Photo, p.nomCouleur, libelleTaille, QuantiteStock from produit p, couleur c, sous_categorie sc where c.NomCouleur=p.NomCouleur and sc.idSousCat=p.idSousCat and LibelleSousCat =\''+req.params.cat+'\'', function(err, rows, fields){
+    if(err) { console.log(err); return res.send(err); }
+    var my_produits = [];
+    for (i = 0; i < rows.length; i++){
+      var my_produit = { };
+      my_produit._id = rows[i].Reference;
+      my_produit.name = rows[i].Nom;
+      my_produit.subcat = rows[i].LibelleSousCat;
+      my_produit.tag = rows[i].Tag;
+      my_produit.price = rows[i].Prix;
+      my_produit.description = rows[i].Description;
+      my_produit.picture = rows[i].Photo;
+      my_produit.color = rows[i].nomCouleur;
+      my_produit.size_name = rows[i].libelleTaille;
+      my_produit.quantity = rows[i].QuantiteStock;
+      my_produits.push(my_produit);
+    }
       res.json(my_produits);
     });
   });
@@ -313,33 +388,45 @@ router.get('/product/cat/:cat', function(req, res){
 ////// methode : POST //////
 
 // Crée un nouveau produit
-router.post('/product/', function(req, res){
-  // console.log(req.body.newProduct);
-  var product = new Product(req.body.newProduct);
-  product.save(function(err, product){
-    if(err)
-      res.send({success: false, message: err});
-    else{
-      res.send({success: true, message: product});
-    }
+router.post('/admin/api/product/',function(req,res, next){
+  
+  req.getConnection(function(err, connection) {
+    if(err) return next(err);
+
+    connection.query('INSERT INTO produit(nom, tag, prix, description, photo, NomCouleur, idSousCat) VALUES(?, ?, ?, ?, ?, ?, ?)', [req.body.name, req.body.tag, req.body.price, req.body.description, req.body.picture, req.body.color, req.body.subcat], function(err,newproduct){
+      
+      if(err) return next(err);
+
+      return res.send({ success: true, message: "Produit bien ajouté."});
+    });
   });
 });
 
 ////// methode : PUT //////
-router.put('/product/', function(req, res){
-  console.log(req.body.product._id);
-  var query = {_id: req.body.product._id};
-  Product.update(query, req.body.product, function(err, response){
-    if (err) res.json({success : false, message: err});
-    else res.json({success: true, message: response});
+router.put('/admin/api/product/',function(req,res,next){
+  req.getConnection(function(err,connection) {
+    if(err) return next(err);
+
+    connection.query('UPDATE produit set nom =?, tag =?, prix =?, description =?, nomCouleur =?,libelleTaille= ?, quantiteStock= ? where reference = ?',[req.body.product.name, req.body.product.tag, req.body.product.price, req.body.product.description, req.body.product.color,  req.body.product.size[0].size_name, req.body.product.size[0].quantity, req.body.product._id],function(err){
+      if(err) return next(err);
+
+      return res.json({ success: true});
+
+    });
   });
 });
 
 ////// methode : DELETE //////
-router.delete('/product/:productId', function(req, res){
-  Product.remove({_id: req.params.productId}, function(err, response){
-    if (err) throw err;
-    else res.json({success: true, message: response});
+router.delete('/admin/api/product/:productId',function(req,res,next){
+  req.getConnection(function(err,connection) {
+    if(err) return next(err);
+
+    connection.query('DELETE FROM produit WHERE reference = ?', [req.params.productId], function(err,rows,fields){
+      if(err) {
+          return next(err);
+        }
+        return res.send({ success: true });
+    });
   });
 });
 
@@ -348,8 +435,8 @@ router.delete('/product/:productId', function(req, res){
 ////// methode : GET //////
 
 // Retourne tous les commentaires
-router.get('/comment/all', function(req, res){
-  Comment.find(function(err, comments){
+router.get('/admin/api/comment/all',function(req,res){
+  Comment.find(function(err,comments){
     if(err)
       res.send(err);
     else {
@@ -362,8 +449,8 @@ router.get('/comment/all', function(req, res){
 });
 
 // Retourne le commentaire avec l'id demandé
-router.get('/comment/:comment_id', function(req, res){
-  Comment.findOne(ObjectId(req.params.comment_id), function(err, comment){
+router.get('/admin/api/comment/:comment_id',function(req,res){
+  Comment.findOne(ObjectId(req.params.comment_id),function(err,comment){
     if(err)
       res.send(err);
     else {
@@ -376,8 +463,8 @@ router.get('/comment/:comment_id', function(req, res){
 });
 
 // Retourne les commentaires de l'auteur donné
-router.get('/comment/author/:author_id', function(req, res){
-  Comment.find({author_id: ObjectId(req.params.author_id)}, function(err, comment){
+router.get('/admin/api/comment/author/:author_id',function(req,res){
+  Comment.find({author_id: ObjectId(req.params.author_id)},function(err,comment){
     if(err)
       res.send(err);
     else {
@@ -390,8 +477,8 @@ router.get('/comment/author/:author_id', function(req, res){
 });
 
 // Retourne les commentaires du produit donné
-router.get('/comment/product/:product_id', function(req, res){
-  Comment.find({product_id: ObjectId(req.params.product_id)}, function(err, comment){
+router.get('/admin/api/comment/product/:product_id',function(req,res){
+  Comment.find({product_id: ObjectId(req.params.product_id)},function(err,comment){
     if (err)
       res.send(err);
     else {
@@ -408,35 +495,16 @@ router.get('/comment/product/:product_id', function(req, res){
 ////// methode : GET //////
 
 // Retourne tous les catégories
-router.get('/categorie/all', function(req, res){
-  /*Categorie.find(/*function(err, categories)*/
-    // {
-    // if(err)
-    //   res.send(err);
-    //   else {
-    //     if (categories)
-    //       res.json(categories);
-    //     else
-    //       res.send(false);
-    //   }
-    // }
-  /*)
-  .populate('products')
-  .exec(function(err, categories){
-    if(err) throw err;
-    else {
-      if (categories) res.json(categories);
-      else res.send(false);
-    }
-  });*/
-  req.getConnection(function(err, connection) {
-      if(err) return next(err);
+router.get('/api/categorie/all',function(req,res,next){
+  
+  req.getConnection(function(err,connection) {
+    if(err) return next(err);
 
-      connection.query('SELECT idCat,LibelleCat FROM categorie', function(err, rows, fields) {
+    connection.query('SELECT idCat,LibelleCat FROM categorie',function(err,rows,fields) {
+      if(err) return next(err);
+      connection.query('Select idCat,LibelleSousCat from Sous_Categorie',function(err,souscat,fields){
         if(err) return next(err);
-        connection.query('Select idCat, LibelleSousCat from Sous_Categorie', function(err, souscat, fields){
-          if(err) return next(err);
-        
+                          
           var my_categories = [];
           for (var i = 0; i < rows.length; i++)
           {

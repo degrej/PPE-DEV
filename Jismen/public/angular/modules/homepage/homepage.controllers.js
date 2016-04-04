@@ -51,46 +51,106 @@ homepageControllers.controller('subcatCtrl', ['$scope', '$http', '$routeParams',
 
 // USER
 
-homepageControllers.controller('LoginCtrl', ['$scope', '$location', '$window', 'userFactory',
-  function($scope, $location, $window, userFactory){
+homepageControllers.controller('LoginCtrl', ['$scope', '$location', '$window', 'AuthenticationService',
+  function($scope, $location, $window, authenticationService){
     $scope.email = '';
     $scope.password = '';
-    $scope.login = function(){
-      userFactory.login(email, password)
-      .success(function(user){
-        $window.sessionStorage.token = user.token;
+    $scope.login = function() {
+      authenticationService.login($scope.email, $scope.password, function(response) {
+        if (response.success == true)
+        {
+          authenticationService.setUserData({
+            token: response.token,
+            role: response.role
+          });
+
+          swal({
+            type:"success",
+            title: "Connexion réussie",
+            text: "Vous allez être connecté à votre compte.",
+            closeOnConfirm: true
+          }, function() {
+            $window.location = response.redirectPath;
+          });  
+        }
+        else
+        {
+          swal({
+            type:"error",
+            title: "Echec de la connexion",
+            text: "Impossible de se connecter. \n " +response.message,
+            closeOnConfirm: true
+          });
+        }
+      });
+
+      /*authenticationService.login($scope.email, $scope.password)
+      .success(function(jsonResponse){
+        console.log(jsonResponse);
+        if (jsonResponse.success == true)
+        {
+          swal({
+            type:"success",
+            title: "Connexion réussie",
+            text: "Vous allez être connecté à votre compte.",
+            closeOnConfirm: true
+          }, function(){
+            $window.location = jsonResponse.redirectPath;
+          });  
+        }
+        else
+        {
+          swal({
+            type:"error",
+            title: "Echec de la connexion",
+            text: "Impossible de se connecter. \n " +jsonResponse.message,
+            closeOnConfirm: true
+          });
+        }
+
+        //$window.sessionStorage.token = user.token;
       })
       .error(function(status, data){
         console.log(status);
         console.log(data);
-      });
+      });*/
     }
   }]);
 
-homepageControllers.controller('SignupCtrl', ['$scope', function($scope){
-  $scope.page = 'Insription';
-  $scope.name = null;
-  $scope.firstname = null;
-  $scope.address = null;
-  $scope.zipcode = null;
-  $scope.city = null;
-  $scope.email = null;
-  $scope.paswword = null;
-  $scope.confirmPass = null;
-  $scope.tel = null;
-  $scope.signup = function(){
-    console.log(
-      $scope.name,
-      $scope.firstname,
-      $scope.address,
-      $scope.zipcode,
-      $scope.city,
-      $scope.email,
-      $scope.paswword,
-      $scope.confirmPass,
-      $scope.tel
-    );
-  };
+homepageControllers.controller('SignupCtrl', ['$scope', '$location', '$window', 'userFactory', 
+  function($scope, $location, $window, userFactory){
+    $scope.page = 'Insription';
+    $scope.reset = function(){
+      $scope.name = '';
+      $scope.firstname = '';
+      $scope.address = '';
+      $scope.zipcode = '';
+      $scope.city = '';
+      $scope.email = '';
+      $scope.password = '';
+      $scope.confirmPass = '';
+      $scope.tel = '';
+    };
+    $scope.reset();
+    $scope.signup = function(){
+      userFactory.signup($scope.name, $scope.firstname, $scope.address, $scope.zipcode, $scope.city, $scope.email, $scope.password, $scope.confirmPass, $scope.tel)
+      .success(function(signup){
+        swal({
+          type:"success",
+          title: "Inscription réussie !",
+          text: "Votre inscription s'est bien passé. Veuillez vous connecter.",
+          closeOnConfirm: true
+        }, $scope.reset());
+      })
+      .error(function(response, status){
+        swal({
+          type:"error",
+          title: "Echec lors de l'inscription",
+          text: "Une erreur est survenue lors de l'inscription.\nMessage: " + response.message,
+          closeOnConfirm: true
+        });
+      }); 
+    }
 }]);
 
 homepageControllers.controller('UserCtrl', ['$scope', '$routeParams', '$http',function($scope, $routeParams, $http){

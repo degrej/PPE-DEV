@@ -32,9 +32,15 @@
           <option ng-repeat="subcat in subcats">{{subcat.subcat_name}}</option>
         </select>
       </div>
-      <div class="form-group col-md-6">
+      <!-- <div class="form-group col-md-6">
         <label class="control-label">Taille<span class="red"> *</span> :</label>
           <input ng-model="s.size_name" Type="text" class="form-control" value="{{s.size_name}}" placeholder="Taille...">
+      </div> -->
+      <div class="form-group col-md-6">
+        <label class="control-label">Taille<span class="red"> *</span> :</label>
+          <select ng-model="s.size_name" class="form-control" name="" value="{{s.size_name}}" required>
+            <option ng-repeat="size in sizes">{{size}}</option>
+        </select>
       </div>
       <div class="form-group col-md-6">
         <label class="control-label">Quantité <span class="red"> *</span>:</label>
@@ -49,7 +55,7 @@
         <button ng-disabled="productForm.$invalid" type="submit" name="Enregistrer" class="btn btn-primary mg-b-15 col-xs-12 col-sm-5">
           <i class="glyphicon glyphicon-ok"></i> Enregistrer
         </button>
-        <a href="admin#/products" class="btn btn-danger mg-b-15 col-xs-12 col-sm-5 col-sm-offset-2">
+        <a href="#/products" class="btn btn-danger mg-b-15 col-xs-12 col-sm-5 col-sm-offset-2">
           <i class="fa fa-ban"></i> Annuler
         </a>
       </div>

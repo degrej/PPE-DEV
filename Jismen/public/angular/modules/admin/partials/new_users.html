@@ -31,15 +31,15 @@
       <span ng-show="confirmPass != '' && confirmPass != newUser.password"><i class="fa fa-close red"></i></span>
       <input ng-model="confirmPass" class="form-control" type="password" name="ConfirmationMDP" placeholder="Confirmez votre mot de passe" required="true"/>
     </div>
-    <div class="form-group col-md-6">
+    <div ng-show="newUser.role=='client'" class="form-group col-md-6">
       <label>Adresse :</label>
       <input ng-model="newUser.address" class="form-control" type="text" name="Adresse" placeholder="Adresse..." />
     </div>
-    <div class="form-group col-md-6">
+    <div ng-show="newUser.role=='client'" class="form-group col-md-6">
       <label>Code postal :</label>
       <input ng-model="newUser.zipcode" class="form-control" type="text" name="CP" placeholder="Code postal..." />
     </div>
-    <div class="form-group col-md-6">
+    <div ng-show="newUser.role=='client'" class="form-group col-md-6">
       <label>Ville :</label>
       <input ng-model="newUser.city" class="form-control" type="text" name="Ville" placeholder="Ville..." />
     </div>

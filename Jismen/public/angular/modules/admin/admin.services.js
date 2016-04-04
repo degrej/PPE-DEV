@@ -67,24 +67,74 @@ adminServices.factory('tokenInterceptor', ['$q', '$window', 'authFactory', funct
 ********* USERS *********
 **************************/
 adminServices.factory('usersFactory', ['$http', function($http){
-  return {
-    getAllUsers: function(){
-      return $http.get('/api/user/all');
-    },
-    getUser: function(user){
-      return $http.get('/api/user/'+user);
-    },
-    // put permet la modification
-    updateUser: function(user){
-      return $http.put('/api/user/', {user: user});
-    },
-    deleteUser: function(user){
-      return $http.delete('/api/user/'+user);
-    },
-    addUser: function(user){
-      console.log($http.post('/api/user/',{user: user}));
-    }
+	// On prépare le conteneur de nos fonctions utilisateurs
+	var usersFactoryObj = {};
+  
+	// On définit les propriétés et fonctions de notre service
+  
+  usersFactoryObj.getAllUsers = function(){
+    return $http.get('/admin/api/user/all');
   };
+	usersFactoryObj.getUser = function(user, successCallbackUser, errorCallbackUser) {
+		var httpPromiseUser = $http.get('/admin/api/user/'+user);
+		
+		if (successCallbackUser && typeof(successCallbackUser) === 'function') {
+			httpPromiseUser.success(successCallbackUser);
+		}
+		if (errorCallbackUser && typeof(errorCallbackUser) === 'function') {
+			httpPromiseUser.error(errorCallbackUser);
+		}
+		return httpPromiseUser;
+	};
+    // getUser: function(user){
+      // return $http.get('/api/user/'+user);
+    // },
+    // put permet la modification
+	usersFactoryObj.updateUser = function(user, successCallbackUpdateUser, errorCallbackUpadateUser) {
+		var httpPromiseUpdateUser = $http.put('/admin/api/user/', {user: user});
+		
+		if (successCallbackUpdateUser && typeof(successCallbackUpdateUser) === 'function') {
+			httpPromiseUpdateUser.success(successCallbackUpdateUser);
+		}
+		if (errorCallbackUpadateUser && typeof(errorCallbackUpadateUser) === 'function') {
+			httpPromiseUpdateUser.error(errorCallbackUpadateUser);
+		}
+		return httpPromiseUpdateUser;
+	};
+    // updateUser: function(user){
+      // return $http.put('/api/user/', {user: user});
+    // },
+	// delete permet la suppression
+	usersFactoryObj.deleteUser = function(user, successCallbackDeleteUser, errorCallbackDeleteUser) {
+		var httpPromiseDeleteUser = $http.delete('/admin/api/user/'+user);
+		
+		if (successCallbackDeleteUser && typeof(successCallbackDeleteUser) === 'function') {
+			httpPromiseDeleteUser.success(successCallbackDeleteUser);
+		}
+		if (errorCallbackDeleteUser && typeof(errorCallbackDeleteUser) === 'function') {
+			httpPromiseDeleteUser.error(errorCallbackDeleteUser);
+		}
+		return httpPromiseDeleteUser
+	};
+    // deleteUser: function(user){
+      // return $http.delete('/api/user/'+user);
+    // },
+	// add permet l'ajout
+	usersFactoryObj.addUser = function(user, successCallbackAddUser, errorCallbackAddUser) {
+		var httpPromiseAddUser = $http.post('/admin/api/user/',{user: user});
+		
+		if (successCallbackAddUser && typeof(successCallbackAddUser) === 'function') {
+			httpPromiseAddUser.success(successCallbackAddUser);
+		}
+		if (errorCallbackAddUser && typeof(errorCallbackAddUser) === 'function') {
+			httpPromiseAddUser.error(errorCallbackAddUser);
+		}
+		return httpPromiseAddUser
+	};
+    // addUser: function(user){
+      // $http.post('/api/user/',{user: user});
+    // }
+	return usersFactoryObj;
 }]);
 
 
@@ -92,18 +142,63 @@ adminServices.factory('usersFactory', ['$http', function($http){
 ******** PRODUCTS *******
 **************************/
 adminServices.factory('productsFactory', ['$http', function($http){
-  return {
-    getAllProducts: function(products, err){
-      return $http.get('/api/product/all');
-    },
-    getProduct: function(product){
-      return $http.get('/api/product/'+product);
-    },
-    addProduct: function(newProduct){
-      // console.log(newProduct);
-      return $http.post('/api/product', {newProduct:newProduct});
+  // On prépare le conteneur de nos fonctions de services
+  var productFactoryObj = {};
+
+  // On définit les propriétés et fonctions de notre service
+  productFactoryObj.sizes = ['XS','S','M','L','XL','XXL'];
+  productFactoryObj.getAllProducts = function(products,err) {
+    return $http.get('/api/product/all');
+  };
+  productFactoryObj.getProduct = function(productId, callbackSuccessSelectProduct, callbackErrorSelectProduct) {
+    var httpPromiseSelectProduct =  $http.get('/api/product/' + productId);
+	
+	if(callbackSuccessSelectProduct && typeof(callbackSuccessSelectProduct) === 'function') {
+      httpPromise.success(callbackSuccessSelectProduct);
     }
-  }
+    if(callbackErrorSelectProduct && typeof(callbackErrorSelectProduct) === 'function') {
+      httpPromise.error(callbackErrorSelectProduct);
+    }
+    return httpPromiseSelectProduct;
+  };
+  productFactoryObj.addProduct = function(newProduct, callbackSuccessAdd, callbackErrorAdd) {
+	  
+    var httpPromiseAdd = $http.post('/admin/api/product', {newProduct:newProduct});
+	
+	if(callbackSuccessAdd && typeof(callbackSuccessAdd) === 'function') {
+      httpPromise.success(callbackSuccessAdd);
+    }
+    if(callbackErrorAdd && typeof(callbackErrorAdd) === 'function') {
+      httpPromise.error(callbackErrorAdd);
+    }
+    return httpPromiseAdd;
+  };
+  productFactoryObj.deleteProduct = function(productId, successCallback, errorCallback) {
+    var httpPromise = $http.delete('/admin/api/product/' + productId);
+
+    if(successCallback && typeof(successCallback) === 'function') {
+      httpPromise.success(successCallback);
+    }
+    if(errorCallback && typeof(errorCallback) === 'function') {
+      httpPromise.error(errorCallback);
+    }
+    return httpPromise;
+  };  
+
+  productFactoryObj.updateProduct = function(product, callbackSuccesUpdate, callbackErrorUpdate) {
+    var httpPromiseUpdate = $http.put('/admin/api/product', {product:product});
+
+    if (callbackSuccesUpdate && typeof(callbackSuccesUpdate) === 'function') {
+      httpPromiseUpdate.success(callbackSuccesUpdate);
+    }
+    if(callbackErrorUpdate && typeof(callbackErrorUpdate) === 'function') {
+      httpPromiseUpdate.error(callbackErrorUpdate);
+    }
+    return httpPromiseUpdate;
+  };
+    
+  // On le rend accessible quand il est requis par un controlleur (DI: Dependency Injection)
+  return productFactoryObj;
 }]);
 
 /***********************
@@ -124,7 +219,7 @@ adminServices.factory('categoriesFactory', ['$http', function($http){
 adminServices.factory('commentsFactory', ['$http', function($http){
   return {
     allComments: function(comments, err){
-      return $http.get('/api/comment/all');
+      return $http.get('/admin/api/comment/all');
     }
   }
 }]);

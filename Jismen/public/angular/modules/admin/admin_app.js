@@ -1,4 +1,4 @@
-var admin = angular.module('admin_app', ['ngRoute', 'adminControllers', 'adminServices']);
+var admin = angular.module('admin_app', ['ngRoute', 'ngCookies', 'adminControllers', 'adminServices', 'authenticationServices']);
 
 admin.config(['$httpProvider', function($httpProvider){
   $httpProvider.interceptors.push('tokenInterceptor');
@@ -7,42 +7,42 @@ admin.config(['$httpProvider', function($httpProvider){
 admin.config(['$routeProvider', '$locationProvider', function($routeProvider, $locationProvider){
   $routeProvider
     .when('/', {
-      templateUrl: 'angular/modules/admin/partials/admin.html', // partial qui est rendu
+      templateUrl: '/angular/modules/admin/partials/admin.html', // partial qui est rendu
       controller: 'AdminCtrl',
       access: {authed: true} // peut avoir des contraintres 
     })
     .when('/login', {
-      templateUrl: 'angular/modules/admin/partials/login.html',
+      templateUrl: '/angular/modules/admin/partials/login.html',
       controller: 'LoginCtrl',
       access: {authed: false}
     })
     .when('/users',{
-      templateUrl: 'angular/modules/admin/partials/users.html',
+      templateUrl: '/angular/modules/admin/partials/users.html',
       controller: 'UsersCtrl',
       access: {authed: true}
     })
     .when('/users/:user',{
-      templateUrl: 'angular/modules/admin/partials/user.html',
+      templateUrl: '/angular/modules/admin/partials/user.html',
       controller: 'UserCtrl',
       access: {authed: true}
     })
     .when('/new/users',{
-      templateUrl: 'angular/modules/admin/partials/new_users.html',
+      templateUrl: '/angular/modules/admin/partials/new_users.html',
       controller: 'NewUserCtrl',
       access: {authed: true}
     })
     .when('/products',{
-      templateUrl: 'angular/modules/admin/partials/products.html',
+      templateUrl: '/angular/modules/admin/partials/products.html',
       controller: 'ProductsCtrl',
       access: {authed: true}
     })
     .when('/products/:product',{
-      templateUrl: 'angular/modules/admin/partials/product.html',
+      templateUrl: '/angular/modules/admin/partials/product.html',
       controller: 'ProductCtrl',
       access: {authed: true}
     })
     .when('/new/products/', {
-      templateUrl: 'angular/modules/admin/partials/new_products.html',
+      templateUrl: '/angular/modules/admin/partials/new_products.html',
       controller: 'NewProductCtrl',
       access: {authed: true}
     })

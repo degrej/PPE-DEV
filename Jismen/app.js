@@ -1,55 +1,38 @@
-var express     = require('express');
-var app         = module.exports = express();
-var path        = require('path');
-var favicon     = require('serve-favicon');
-var logger      = require('morgan');
-var cookieParser= require('cookie-parser');
-var bodyParser  = require('body-parser');
-var mongoose    = require('mongoose');
-var jwt         = require('jsonwebtoken');
-var config      = require('./conf');
+var express      = require('express');
+var app          = module.exports = express();
+var path         = require('path');
+var mysql        = require('mysql'); // node-mysql module
+var myConnection = require('./custom_modules/custom-express-myconnection');
+//var jwt          = require('jsonwebtoken');
+
+var config       = require('./conf');
+
+var middlewares  = require('./middlewares');
+var routes       = require('./routes/index');
+var api          = require('./routes/api');
+var admin        = require('./routes/admin'); 
 
 // connexion à la DB
-var mysql = require('mysql'), // node-mysql module
-    myConnection = require('express-myconnection'), // express-myconnection module
-    dbOptions = {
-      host: 'localhost',
-      user: 'root',
-      password: '',
-      database: 'jismen'
-    };
-  
-app.use(myConnection(mysql, dbOptions, 'single'));
+app.use(myConnection(mysql, config.mysql, 'single'));
 
-mongoose.connect(config.db, function(err){
-  if (err){
-    console.log('Erreur de connexion : ' + err);
-  } else {
-    console.log('Connexion à jismen : ok !');
-  }
-});
-app.set('secret', config.secret)
-
-var routes  = require('./routes/index');
-var api     = require('./routes/api');
-var admin   = require('./routes/admin');
+app.set('secret', config.security.secret);
 
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
 
-// uncomment after placing your favicon in /public
-//app.use(favicon(__dirname + '/public/favicon.ico'));
-app.use(logger('dev'));
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: false }));
-app.use(cookieParser());
-app.use(express.static(path.join(__dirname, 'public')));
+// Middlewares setup
+middlewares(app);
 
+// Routing setup
 app.use('/', routes);
-app.use('/api/', api);
+app.use('/', api);
 app.use('/admin/', admin);
+
+/*-----------------------------------------------------*
+|------------------- ERROR HANDLING -------------------|
+*-----------------------------------------------------*/
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
@@ -63,6 +46,15 @@ app.use(function(req, res, next) {
 // development error handler
 // will print stacktrace
 if (app.get('env') === 'development') {
+
+  app.use('/api', function(err, req, res, next) {
+    res.status(err.status || 500);
+    return res.json({
+      message: err.message,
+      error: err
+    });
+  });
+
   app.use(function(err, req, res, next) {
     res.status(err.status || 500);
     res.render('error', {
@@ -74,6 +66,14 @@ if (app.get('env') === 'development') {
 
 // production error handler
 // no stacktraces leaked to user
+app.use('/api', function(err, req, res, next) {
+  res.status(err.status || 500);
+    return res.json({
+      message: err.message,
+      error: {}
+    });
+});
+
 app.use(function(err, req, res, next) {
   res.status(err.status || 500);
   res.render('error', {

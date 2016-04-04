@@ -1,4 +1,4 @@
-var homepage = angular.module('homepage_app', ['ngRoute', 'ngAnimate', 'ui.bootstrap', 'homepageControllers', 'homepageServices']);
+var homepage = angular.module('homepage_app', ['ngRoute', 'ngAnimate', 'ngCookies', 'ui.bootstrap', 'homepageControllers', 'homepageServices', 'authenticationServices']);
 
 homepage.config(['$routeProvider', function($routeProvider){
 	$routeProvider
