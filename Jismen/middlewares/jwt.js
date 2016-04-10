@@ -4,7 +4,7 @@ var jwt = require('express-jwt');
 var config = require('../conf');
 
 module.exports = function(app) {
-	app.use(jwt({ secret: config.security.secret }).unless({path: ['/', /^\/api/i, /^\/admin\/?$/i]  }));
+	app.use(jwt({ secret: config.security.secret }).unless({path: ['/', /^\/api/i, /^\/admin\/?$/i, /^\/client\/?$/i]  }));
 
 	app.use('/admin/api', function(req, res, next) {
 		if(!req.user) return res.status(401).end();

@@ -157,6 +157,10 @@ homepageControllers.controller('UserCtrl', ['$scope', '$routeParams', '$http',fu
 
 }]);
 
+homepageControllers.controller('contactCtrl', ['$scope', '$routeParams', '$http',function($scope, $routeParams, $http){
+
+}]);
+
 homepageControllers.controller('DescriptionproduitCtrl', ['$scope', '$routeParams','productFactory', function($scope, $routeParams, productFactory){
  productFactory.getProduct($routeParams.product).success(function(product){
   $scope.product = product;

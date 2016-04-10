@@ -11,6 +11,7 @@ var middlewares  = require('./middlewares');
 var routes       = require('./routes/index');
 var api          = require('./routes/api');
 var admin        = require('./routes/admin'); 
+var client       = require('./routes/client');
 
 // connexion à la DB
 app.use(myConnection(mysql, config.mysql, 'single'));
@@ -29,6 +30,7 @@ middlewares(app);
 app.use('/', routes);
 app.use('/', api);
 app.use('/admin/', admin);
+app.use('/client/', client);
 
 /*-----------------------------------------------------*
 |------------------- ERROR HANDLING -------------------|

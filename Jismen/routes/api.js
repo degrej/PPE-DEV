@@ -245,7 +245,7 @@ router.put('/admin/api/user', function(req, res, next) {
 });
 
 ////// methode : delete //////
-router.delete('/user/:userId',function(req,res, next){
+router.delete('/admin/api/user/:userId',function(req,res, next){
   req.getConnection(function(err,connection) {
   if(err) return next(err);
 

@@ -116,9 +116,7 @@ adminServices.factory('usersFactory', ['$http', function($http){
 		}
 		return httpPromiseDeleteUser
 	};
-    // deleteUser: function(user){
-      // return $http.delete('/api/user/'+user);
-    // },
+    
 	// add permet l'ajout
 	usersFactoryObj.addUser = function(user, successCallbackAddUser, errorCallbackAddUser) {
 		var httpPromiseAddUser = $http.post('/admin/api/user/',{user: user});
@@ -131,9 +129,7 @@ adminServices.factory('usersFactory', ['$http', function($http){
 		}
 		return httpPromiseAddUser
 	};
-    // addUser: function(user){
-      // $http.post('/api/user/',{user: user});
-    // }
+    
 	return usersFactoryObj;
 }]);
 

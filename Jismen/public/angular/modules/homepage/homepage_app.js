@@ -30,6 +30,11 @@ homepage.config(['$routeProvider', function($routeProvider){
 			controller: 'UserCtrl'
 		})
 
+		// contactForm
+		.when('/contactForm', {
+			templateUrl: 'angular/modules/homepage/partials/contactForm.html',
+			controller: 'contactCtrl'
+		})
 		//description produit
 		.when('/descriptionproduit/:product', {
 			templateUrl: 'angular/modules/homepage/partials/descriptionproduit.html',

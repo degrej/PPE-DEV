@@ -21,8 +21,15 @@
             <h3>{{new.name}}</h3>
             <p>{{new.description}}</p>
             <p>{{new.price}} €</p>
-            <button class="btn btn-jismen-alt col-xs-12"><i class="fa fa-heart"></i> Coup de coeur</button>
           </a>
+          <button class="btn btn-jismen-alt col-xs-12">
+            <div ng-if="!currentUser.token">
+              <a href="#/login"><i class="fa fa-heart"></i> Coup de coeur </a>
+            </div>
+            <div ng-if="currentUser.token">
+              <a href=""><i class="fa fa-heart"></i> Coup de coeur </a>
+            </div>
+          </button>
         </div>
       </div>
     </div>
@@ -32,7 +39,7 @@
         <div class="col-xs-12  col-sm-4 col-sm-offset-4 center mg-bt-120">
           <div class="bordered">
             <h1>Restez tendance avec notre newsletter mensuelle !</h1>
-            <a href="" class="btn mg-t-30">
+            <a href="#/signup/" class="btn mg-t-30">
               <i class="fa fa-heart-o fa-lg"></i> Je m'inscris !
             </a>
           </div>
@@ -51,7 +58,7 @@
             <h3>{{promo.name}}</h3>
             <p>{{promo.description}}</p>
             <p>{{promo.price}} €</p>
-            <button class="btn btn-jismen-alt col-xs-12"><i class="fa fa-heart"></i> Coup de coeur</button>
+            <button class="btn btn-jismen-alt col-xs-12"><a href=""><i class="fa fa-heart"></i> Coup de coeur</a></button>
           </a>
         </div>
       </div>
