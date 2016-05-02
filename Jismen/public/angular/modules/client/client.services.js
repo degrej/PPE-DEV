@@ -31,6 +31,12 @@ clientServices.factory('userFactory', ['$http', function($http){
     },
     signup: function(name, firstname, address, zipcode, city, email, password, confirmPass, tel){
       return $http.post('/api/user/register/', {name: name, firstname: firstname, address: address, zipcode: zipcode, city: city, email: email, password: password, confirmPass: confirmPass, tel: tel});
+    },
+    information: function(){
+      return $http.get('/client/api/informations/');
+    },
+    updateProfil: function(userData){
+      return $http.put('/client/api/updateProfil/', userData);
     }
   };
 }]);

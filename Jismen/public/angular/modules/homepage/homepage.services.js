@@ -35,3 +35,19 @@ homepageServices.factory('userFactory', ['$http', function($http){
   };
 }]);
 
+homepageServices.factory('contactFactory', ['$http', function($http) {
+  var service = {};
+
+  service.sendContactRequest = _fnSendContactRequest;
+
+  return service;
+
+  function _fnSendContactRequest(oFormData, successCallback, errorCallback) {
+    var contactPromise = $http.post('/api/contact', oFormData);
+    if(successCallback && typeof(successCallback) === 'function')
+      contactPromise.success(successCallback);
+    if(errorCallback && typeof(errorCallback) === 'function')
+      contactPromise.error(errorCallback);
+    return contactPromise;
+  }
+}]);

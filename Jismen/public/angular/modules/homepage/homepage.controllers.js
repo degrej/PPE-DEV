@@ -157,8 +157,42 @@ homepageControllers.controller('UserCtrl', ['$scope', '$routeParams', '$http',fu
 
 }]);
 
-homepageControllers.controller('contactCtrl', ['$scope', '$routeParams', '$http',function($scope, $routeParams, $http){
+homepageControllers.controller('contactCtrl', ['$scope', '$routeParams', 'contactFactory',function($scope, $routeParams, contactFactory){
+  _initForm();
+  var _bSending = false;
+  $scope.sendRequest = _fnSendRequest;
 
+  function _initForm() {
+     $scope.form = {
+      email: "",
+      name: "",
+      firstname: "",
+      message:""
+    };
+  }
+  function _fnSendRequest() {
+    if(_bSending) return;
+    _bSending = true;
+    
+    contactFactory.sendContactRequest($scope.form, function(response) {
+      _bSending = false;
+      _initForm();
+      swal({
+        type:"success",
+        title:"Succès",
+        text: "Votre demande a bien été envoyée et sera traitée dès que possible par notre équipe.",
+        closeOnConfirm: true
+      });
+    }, function() {
+      _bSending = false;
+      swal({
+        type:"error",
+        title:"Erreur",
+        text:"Oops ! Impossible de soumettre votre demande.",
+        closeOnConfirm: true
+      });
+    });
+  }
 }]);
 
 homepageControllers.controller('DescriptionproduitCtrl', ['$scope', '$routeParams','productFactory', function($scope, $routeParams, productFactory){

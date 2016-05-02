@@ -375,15 +375,47 @@ admin.controller('ProductCtrl', ['$scope', '$location','$http', '$routeParams', 
 
 admin.controller('NewProductCtrl', ['$scope', '$location', 'productsFactory', 'categoriesFactory',
 function($scope, $location, productsFactory, categoriesFactory){
-  console.log(productsFactory.sizes);
   $scope.sizes = productsFactory.sizes;
+  $scope.product = {};
   $scope.subcats = [];
   categoriesFactory.getAllCategories().success(function(categories){
     categories = categories;
     categories.forEach(function(cat){
       cat.subcat.forEach(function(subcat){$scope.subcats.push(subcat);});
     });
+    if($scope.product) {
+      $scope.product.subcat = $scope.subcats[0]._id.toString(); 
+    }  else {
+      $scope.product = {
+        subcat: $scope.subcats[0]._id.toString()
+      };
+    }
+    $scope.updateSizeList();
+    $scope.product.size_name = $scope.sizes[0];
   });
+  
+  $scope.updateSizeList = function(){
+    var i = 0;
+    var isFound = false;
+    do {
+      var subcat = $scope.subcats[i++];
+
+      if(subcat._id == $scope.product.subcat) {
+        if(subcat.sizeType == 1)
+        {
+          $scope.sizes = productsFactory.sizes;  
+        }
+        else if(subcat.sizeType == 2)
+        {
+          $scope.sizes = productsFactory.shoes_sizes;
+        }
+        else{
+          $scope.sizes = [];
+        }
+        isFound == true;
+      }
+    } while(i < $scope.subcats.length && isFound == false);
+  }
 
   $scope.addProduct = function(product){
     // confirm permet d'ouvrir une popup
@@ -402,7 +434,6 @@ function($scope, $location, productsFactory, categoriesFactory){
       }, function(isConfirm){   
         if (isConfirm) { 
     			var addProductSuccess = function(){
-    				productsFactory.addProduct(product);
     				swal({
               title: "Création", 
               text: "La création du produit a bien était effectuée!", 
@@ -415,11 +446,11 @@ function($scope, $location, productsFactory, categoriesFactory){
     			var addProductError = function() {
     				swal({
               title: "Erreur", 
-              text: "Une erreur est survenue lors de l\'ajout de l\'utilisateur!", 
+              text: "Une erreur est survenue lors de l\'ajout du produit!", 
               type: "error"});
     				$scope.user = angular.copy($scope.master);
     			};
-            productsFactory.deleteProduct(product, addProductSuccess, addProductError);
+          productsFactory.addProduct(product, addProductSuccess, addProductError);
         } 
 		    else {    
           swal({

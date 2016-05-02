@@ -5,7 +5,11 @@
 	var _config = {};
 
 	_config.general = {
-		environment: process.env.NODE_ENV || 'development'
+		environment: process.env.NODE_ENV || 'development',
+		contact_mails: [
+			'Jérémie Degré <jeremie.degre@gmail.com>',
+			'Contact Jismen <contact.jismen@gmail.com'
+		]
 	};
 
 	_config.security = {
@@ -21,14 +25,14 @@
 		user: 'root',
 		password: '',
 		port: 3306,
-		database: 'jismen'
+		database: 'Jismen'
 	};
 
 	_config.smtp = {
 		host: 'smtp.gmail.com',
 		port: '465',
-		user: '', // Gmail address
-		password: ''  // Gmail password
+		user: 'contact.jismen@gmail.com', // Gmail address
+		password: 'adminjismen'  // Gmail password
 	};
 
 	_config.products = {

@@ -86,10 +86,8 @@ adminServices.factory('usersFactory', ['$http', function($http){
 		}
 		return httpPromiseUser;
 	};
-    // getUser: function(user){
-      // return $http.get('/api/user/'+user);
-    // },
-    // put permet la modification
+    
+  // put permet la modification
 	usersFactoryObj.updateUser = function(user, successCallbackUpdateUser, errorCallbackUpadateUser) {
 		var httpPromiseUpdateUser = $http.put('/admin/api/user/', {user: user});
 		
@@ -101,9 +99,7 @@ adminServices.factory('usersFactory', ['$http', function($http){
 		}
 		return httpPromiseUpdateUser;
 	};
-    // updateUser: function(user){
-      // return $http.put('/api/user/', {user: user});
-    // },
+    
 	// delete permet la suppression
 	usersFactoryObj.deleteUser = function(user, successCallbackDeleteUser, errorCallbackDeleteUser) {
 		var httpPromiseDeleteUser = $http.delete('/admin/api/user/'+user);
@@ -143,6 +139,7 @@ adminServices.factory('productsFactory', ['$http', function($http){
 
   // On définit les propriétés et fonctions de notre service
   productFactoryObj.sizes = ['XS','S','M','L','XL','XXL'];
+  productFactoryObj.shoes_sizes = ['36','37','38','39','40','41','42','43','44','45','46']; 
   productFactoryObj.getAllProducts = function(products,err) {
     return $http.get('/api/product/all');
   };
@@ -159,13 +156,13 @@ adminServices.factory('productsFactory', ['$http', function($http){
   };
   productFactoryObj.addProduct = function(newProduct, callbackSuccessAdd, callbackErrorAdd) {
 	  
-    var httpPromiseAdd = $http.post('/admin/api/product', {newProduct:newProduct});
+    var httpPromiseAdd = $http.post('/admin/api/product', newProduct);
 	
 	if(callbackSuccessAdd && typeof(callbackSuccessAdd) === 'function') {
-      httpPromise.success(callbackSuccessAdd);
+      httpPromiseAdd.success(callbackSuccessAdd);
     }
     if(callbackErrorAdd && typeof(callbackErrorAdd) === 'function') {
-      httpPromise.error(callbackErrorAdd);
+      httpPromiseAdd.error(callbackErrorAdd);
     }
     return httpPromiseAdd;
   };

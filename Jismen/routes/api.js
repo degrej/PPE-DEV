@@ -9,7 +9,45 @@ var Categorie = require('../models/categorie');
 var Comment   = require('../models/comment');
 var mysql     = require('mysql');
 var async     = require('async');
+var nodemailer = require("nodemailer");
+var smtpTransport = require("nodemailer-smtp-transport");
+var config = require('../conf.js');
 
+router.post("/api/contact", function(req, res, next) {
+  var sMailAddress = req.body.email;
+  var sLastname = req.body.name;
+  var sFirstname = req.body.firstname;
+  var sMessage = req.body.message;
+  
+  if(!sMailAddress) return next(new Error("Missing mail address"));
+  if(!sLastname) return next(new Error("Missing last name"));
+  if(!sFirstname) return next(new Error("Missing first name"));
+  if(!sMessage) return next(new Error("Missing message"));
+
+  // On crée le transport. C'est l'objet qui va détenir la connexion avec la serveur de mail.
+  var transporter = nodemailer.createTransport(smtpTransport({
+    service:"Gmail",
+    auth:{
+      user: config.smtp.user,
+      pass: config.smtp.password
+    }
+  }));
+  var dToday = new Date();
+  // On envoi le mail. Le premier paramètre est un object contenant les informations du mail (destinataires, expéditeur, mail version texte et mail version html).
+  // Il y a bien plus d'options mais les principales sont celles cités précédemment. Pour la liste complète, voir ici: https://github.com/nodemailer/nodemailer#e-mail-message-fields
+  transporter.sendMail({
+    from: '"' + sFirstname + " " + sLastname + '"<'+ sMailAddress + ">",
+    replyTo: '"' + sFirstname + " " + sLastname + '"<'+ sMailAddress + ">",
+    to: config.general.contact_mails.join(","),
+    subject: "Quelqu'un a besoin d'aide !",
+    text: "Quelqu'un sollicite une assistance.\nRécapitulatif de la demande:\nDate de la demande: " + dToday.toDateString() + " à " + dToday.toTimeString() + "\nPrenom: " + sFirstname + "\nNom: " + sLastname + "\nAdresse mail: " + sMailAddress + "\nMessage:\n" + sMessage,
+    html: "<p>Quelqu'un sollicite une assitance</p><p>Récapitulatif de la demande:</p><ul><li>Date de la demande: " + dToday.toDateString() + " à " + dToday.toTimeString() + "</li><li>Prénom: " + sFirstname + "</li><li>Nom: " + sLastname + "</li><li>Adresse mail: " + sMailAddress + "</li><li>Message: <p>" + sMessage + "</p></li></ul>"
+  }, function(err, info) {
+    if(err) return next(err);
+
+    return res.status(200).send(info);
+  });
+});
 
 /******** Users *********/
 
@@ -17,7 +55,6 @@ var async     = require('async');
 
 // methode : GET Retourne tous les utilisateurs
 router.get('/admin/api/user/all',function(req,res){
-  console.log(req.user);
   // Récupération de la connexion à la base MySQL
   req.getConnection(function(err,connection) {
     if(err) return next(err);
@@ -129,7 +166,7 @@ router.post('/api/user/auth',function(req,res,next){
   
   req.getConnection(function(err,connection) {
     if(err) return next(err);
-
+    console.log(req.body);
     connection.query('Select idUtilisateur, prenom, mail, mdp, role from utilisateur where mail=?', [req.body.email], function(err, utilisateur) {
       if(err) return next(err);
 
@@ -158,6 +195,42 @@ router.post('/api/user/auth',function(req,res,next){
       }
       var token = jwt.sign({ id: utilisateur[0].idUtilisateur, role: utilisateur[0].role }, app.get('secret'), {expiresIn: 3600});
       return res.send({ success: true, message: 'Auth : ok', token : token, role : utilisateur[0].role, redirectPath: redirect});
+    });
+  });
+});
+
+router.get('/client/api/informations', function(req, res, next) {
+  req.getConnection(function(err, connection) {
+    if(err) return next(err);
+
+    connection.query('Select nom, prenom, mail, tel, adresse, CP, ville, mdp from client where idUtilisateur=?', [req.user.id], function(err, information) {
+      if(err) return next(err);
+
+      var informationUser = {};
+      if (information.length > 0)
+      {
+        informationUser.name = information[0].nom;
+        informationUser.firstname = information[0].prenom;
+        informationUser.email = information[0].mail;
+        informationUser.tel = information[0].tel;
+        informationUser.address = information[0].adresse;
+        informationUser.zipcode = information[0].CP;
+        informationUser.city = information[0].ville;
+      }
+      res.json(informationUser);
+    })
+  })
+})
+
+router.put('/client/api/updateProfil', function(req, res, next) {
+  req.getConnection(function(err, connection) {
+    if(err) return next(err);
+
+    connection.query('call sp_updateClient(?,?,?,?,?,?,?,?,?)', [req.body.name, req.body.firstname, req.body.tel, req.body.email, req.body.password, req.body.address,req.body.zipcode, req.body.city, req.user.id], function(err){
+      if(err) return next(err);
+
+      return res.json({ success: true});
+
     });
   });
 });
@@ -393,7 +466,7 @@ router.post('/admin/api/product/',function(req,res, next){
   req.getConnection(function(err, connection) {
     if(err) return next(err);
 
-    connection.query('INSERT INTO produit(nom, tag, prix, description, photo, NomCouleur, idSousCat) VALUES(?, ?, ?, ?, ?, ?, ?)', [req.body.name, req.body.tag, req.body.price, req.body.description, req.body.picture, req.body.color, req.body.subcat], function(err,newproduct){
+    connection.query('call sp_createProduct(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [req.body.reference, req.body.name, req.body.tag, req.body.price, req.body.description, req.body.picture, req.body.quantity, req.body.color, req.body.size_name, req.body.subcat, req.body.fournisseur, req.user.id], function(err,newproduct){
       
       if(err) return next(err);
 
@@ -407,7 +480,7 @@ router.put('/admin/api/product/',function(req,res,next){
   req.getConnection(function(err,connection) {
     if(err) return next(err);
 
-    connection.query('UPDATE produit set nom =?, tag =?, prix =?, description =?, nomCouleur =?,libelleTaille= ?, quantiteStock= ? where reference = ?',[req.body.product.name, req.body.product.tag, req.body.product.price, req.body.product.description, req.body.product.color,  req.body.product.size[0].size_name, req.body.product.size[0].quantity, req.body.product._id],function(err){
+    connection.query('call sp_updateProduct(?,?,?,?,?,?,?,?)',[req.body.product.name, req.body.product.tag, req.body.product.price, req.body.product.description, req.body.product.color,  req.body.product.size[0].size_name, req.body.product.size[0].quantity, req.body.product._id],function(err){
       if(err) return next(err);
 
       return res.json({ success: true});
@@ -502,7 +575,7 @@ router.get('/api/categorie/all',function(req,res,next){
 
     connection.query('SELECT idCat,LibelleCat FROM categorie',function(err,rows,fields) {
       if(err) return next(err);
-      connection.query('Select idCat,LibelleSousCat from Sous_Categorie',function(err,souscat,fields){
+      connection.query('Select idCat,LibelleSousCat, idSousCat, sizeType from Sous_Categorie',function(err,souscat,fields){
         if(err) return next(err);
                           
           var my_categories = [];
@@ -516,9 +589,11 @@ router.get('/api/categorie/all',function(req,res,next){
               if (rows[i].idCat == souscat[j].idCat)
               {
                 var my_souscat = { };
+                my_souscat._id = souscat[j].idSousCat;
                 my_souscat.subcat_name = souscat[j].LibelleSousCat;
+                my_souscat.sizeType = souscat[j].sizeType;
                 my_categorie.subcat.push(my_souscat);
-              }              
+              }           
             }
             my_categories.push(my_categorie);
           }
@@ -526,6 +601,76 @@ router.get('/api/categorie/all',function(req,res,next){
         });
       });
     });
+});
+
+/************ Fournisseurs ***********/
+
+////// methode : GET /////
+
+// Retourne tous les fournisseurs
+router.get('/commercial/api/fournisseurs', function(req,res,next){
+
+  req.getConnection(function(err,connection) {
+    if(err) return next(err);
+
+    connection.query('SELECT * FROM fournisseurs',function(err,rows,fields) {
+      if(err) return next(err);
+
+      var my_fournisseurs = [];
+      for (var i = 0; i < rows.length; i++)
+      {
+        var my_fournisseur = { };
+        my_fournisseur.id = rows[i].idFournisseur;
+        my_fournisseur.name = rows[i].nomFournisseur;
+        my_fournisseur.firstname = rows[i].prenom;
+        my_fournisseur.adress = rows[i].adresse;
+        my_fournisseur.tel = rows[i].tel;
+        my_fournisseur.zipcode = rows[i].CP;
+        my_fournisseur.city = rows[i].ville;
+        
+        my_users.push(my_fournisseur);
+      }
+      res.json(my_fournisseurs);
+    });
+  })  
+});
+
+router.post('/commercial/api/addfourniseur',function(req, res, next) {
+  req.getConnection(function(err, connection) {
+    if(err) return next(err);
+
+      connection.query('call sp_createFournisseur(?,?,?,?,?,?,?)',[req.body.name, req.body.firstname, req.body.address, req.body.tel, req.body.zipcode, req.body.city, req.body.mail], function(err, result) { 
+      if(err) return next(err);
+
+      return res.send({ success : true, message:"L'ajout c'est bien passé."});
+    });
+  });
+});
+
+router.put('/commercial/api/updatefourniseur',function(req,res,next){
+  req.getConnection(function(err, connection) {
+      if(err) return next(err);
+
+      connection.query('call sp_updateFournisseur(?,?,?,?,?,?,?)', [req.body.name, req.body.firstname, req.body.user.tel, req.body.zipcode, req.body.city, req.body._id], function(err, result) {
+        if(err) return next(err);
+
+      return res.send({ success : true, message:"Update OK."});
+      });
+  });
+});
+
+
+router.delete('/commercial/api/deletefourniseur/:_id',function(req,res, next){
+  req.getConnection(function(err,connection) {
+  if(err) return next(err);
+
+    connection.query('delete FROM fournisseur WHERE idFournisseur = ? ', [req.params.Id],function(err,rows,fields) {
+      if(err) {
+          return next(err);
+        }
+        return res.send({ success: true });
+      });
+  });
 });
 
 module.exports = router;

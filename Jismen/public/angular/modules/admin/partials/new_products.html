@@ -2,6 +2,10 @@
   <h1 class="title center mg-b-30">Nouvel article</h1>
     <form ng-submit="addProduct(product)" name="productForm" novalidate>
       <div class="form-group col-md-6">
+        <label class="control-label">Réference<span class="red"> *</span> :</label>
+        <input ng-model="product.reference" Type="text" class="form-control" value="{{product.reference}}" placeholder="Référence..." required>
+      </div>
+      <div class="form-group col-md-6">
         <label class="control-label">Nom<span class="red"> *</span> :</label>
         <input ng-model="product.name" Type="text" class="form-control" value="{{product.name}}" placeholder="Nom..." required>
       </div>
@@ -28,23 +32,25 @@
       </div>
       <div class="form-group col-md-6">
         <label class="control-label">Catégorie<span class="red"> *</span> :</label>
-        <select ng-model="product.subcat" Type="select" class="form-control" value="{{product.subcat}}" placeholder="Catégorie..." required>
-          <option ng-repeat="subcat in subcats">{{subcat.subcat_name}}</option>
+        <select ng-model="product.subcat" ng-change="updateSizeList()" Type="select" class="form-control" placeholder="Catégorie..." required>
+          <option ng-repeat="subcat in subcats" value="{{subcat._id}}">{{subcat.subcat_name}}</option>
         </select>
       </div>
-      <!-- <div class="form-group col-md-6">
-        <label class="control-label">Taille<span class="red"> *</span> :</label>
-          <input ng-model="s.size_name" Type="text" class="form-control" value="{{s.size_name}}" placeholder="Taille...">
-      </div> -->
+      <div class="form-group col-md-6">
+        <label class="control-label">Id du fournisseur<span class="red"> *</span> :</label>
+        <select ng-model="product.fournisseur" Type="select" class="form-control" placeholder="Id fournisseur..." required>
+          <option ng-repeat="fournisseur in fournisseurs" value="{{fournisseur._id}}">{{fournisseur.id}}</option>
+        </select>
+      </div>
       <div class="form-group col-md-6">
         <label class="control-label">Taille<span class="red"> *</span> :</label>
-          <select ng-model="s.size_name" class="form-control" name="" value="{{s.size_name}}" required>
+          <select ng-model="product.size_name" class="form-control" name="" value="{{product.size_name}}" required>
             <option ng-repeat="size in sizes">{{size}}</option>
         </select>
       </div>
       <div class="form-group col-md-6">
         <label class="control-label">Quantité <span class="red"> *</span>:</label>
-          <input ng-model="s.quantity" Type="text" class="form-control" value="{{s.quantity}}" placeholder="Quantity...">
+          <input ng-model="product.quantity" Type="text" class="form-control" value="{{product.quantity}}" placeholder="Quantity...">
       </div>
       <div class="form-group col-xs-12">
         <label class="control-label">Photo<span class="red"> *</span> :</label>
