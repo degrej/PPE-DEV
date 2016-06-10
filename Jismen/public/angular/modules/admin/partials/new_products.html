@@ -37,9 +37,9 @@
         </select>
       </div>
       <div class="form-group col-md-6">
-        <label class="control-label">Id du fournisseur<span class="red"> *</span> :</label>
-        <select ng-model="product.fournisseur" Type="select" class="form-control" placeholder="Id fournisseur..." required>
-          <option ng-repeat="fournisseur in fournisseurs" value="{{fournisseur._id}}">{{fournisseur.id}}</option>
+        <label class="control-label">Nom fournisseur<span class="red"> *</span> :</label>
+        <select ng-model="product.fournisseur" Type="select" class="form-control" placeholder="Nom fournisseur..." required>
+          <option ng-repeat="fournisseur in fournisseurs" value="{{fournisseur.id}}">{{fournisseur.name}} {{fournisseur.firstname}}</option>
         </select>
       </div>
       <div class="form-group col-md-6">

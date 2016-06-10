@@ -205,6 +205,16 @@ adminServices.factory('categoriesFactory', ['$http', function($http){
   }
 }]);
 
+/***********************
+******* FOURNISSEURS ******
+**************************/
+adminServices.factory('fournisseursFactory', ['$http', function($http){
+  return {
+    getAllFournisseurs: function(){
+      return $http.get('/admin/api/fournisseurs');
+    }
+  }
+}]);
 
 /***********************
 ******** COMMENTS *******

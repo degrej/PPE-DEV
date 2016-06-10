@@ -373,11 +373,12 @@ admin.controller('ProductCtrl', ['$scope', '$location','$http', '$routeParams', 
   };
 }]);
 
-admin.controller('NewProductCtrl', ['$scope', '$location', 'productsFactory', 'categoriesFactory',
-function($scope, $location, productsFactory, categoriesFactory){
+admin.controller('NewProductCtrl', ['$scope', '$location', 'productsFactory', 'categoriesFactory','fournisseursFactory',
+function($scope, $location, productsFactory, categoriesFactory, fournisseursFactory){
   $scope.sizes = productsFactory.sizes;
   $scope.product = {};
   $scope.subcats = [];
+  $scope.fournisseurs = [];
   categoriesFactory.getAllCategories().success(function(categories){
     categories = categories;
     categories.forEach(function(cat){
@@ -392,6 +393,10 @@ function($scope, $location, productsFactory, categoriesFactory){
     }
     $scope.updateSizeList();
     $scope.product.size_name = $scope.sizes[0];
+    fournisseursFactory.getAllFournisseurs().success(function(fournisseurs){
+      $scope.fournisseurs = fournisseurs;
+      $scope.product.fournisseur = $scope.fournisseurs[0].id.toString();
+    })   
   });
   
   $scope.updateSizeList = function(){

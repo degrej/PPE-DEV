@@ -50,6 +50,7 @@ app.use(function(req, res, next) {
 if (app.get('env') === 'development') {
 
   app.use('/api', function(err, req, res, next) {
+    console.log(err);
     res.status(err.status || 500);
     return res.json({
       message: err.message,
@@ -58,6 +59,7 @@ if (app.get('env') === 'development') {
   });
 
   app.use(function(err, req, res, next) {
+    console.log(err);
     res.status(err.status || 500);
     res.render('error', {
       message: err.message,
@@ -69,6 +71,7 @@ if (app.get('env') === 'development') {
 // production error handler
 // no stacktraces leaked to user
 app.use('/api', function(err, req, res, next) {
+  console.log(err);
   res.status(err.status || 500);
     return res.json({
       message: err.message,
@@ -77,6 +80,7 @@ app.use('/api', function(err, req, res, next) {
 });
 
 app.use(function(err, req, res, next) {
+  console.log(err);
   res.status(err.status || 500);
   res.render('error', {
     message: err.message,

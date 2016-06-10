@@ -59,7 +59,7 @@ router.get('/admin/api/user/all',function(req,res){
   req.getConnection(function(err,connection) {
     if(err) return next(err);
 
-    connection.query('SELECT idUtilisateur,nom,Prenom,role FROM utilisateur',function(err,rows,fields) {
+    connection.query('SELECT idUtilisateur,nom,Prenom,role,mail FROM utilisateur',function(err,rows,fields) {
       if(err) return next(err);
       var my_users = [];
       for (var i = 0; i < rows.length; i++)
@@ -68,6 +68,7 @@ router.get('/admin/api/user/all',function(req,res){
         my_user._id = rows[i].idUtilisateur;
         my_user.name = rows[i].nom;
         my_user.firstname = rows[i].Prenom;
+        my_user.email = rows[i].mail;
         my_user.role = rows[i].role;
         my_users.push(my_user);
       }
@@ -77,7 +78,7 @@ router.get('/admin/api/user/all',function(req,res){
 });
 
 // methode : GET Retourne l'utilisateur dont l'id est donnée
-router.get('/admin/api/user/:user_id',function(req,res,next){
+router.get('/admin/api/user/:user_id',function(req,res,next){ 
   
   req.getConnection(function(err,connection) {
     if(err) return next(err);
@@ -125,6 +126,10 @@ router.post('/admin/api/user', function(req, res, next) {
         break;
       case 'magasinier':
         insertQuery = 'call sp_createMagasinier(?, ?, ?, ?, ?, ?)';
+        insertQueryParams = [req.body.user.name, req.body.user.firstname, req.body.user.tel, req.body.user.email, req.body.user.password, req.body.user.role];
+        break;
+      case 'commercial':
+        insertQuery = 'call sp_createCommerciale(?, ?, ?, ?, ?, ?)';
         insertQueryParams = [req.body.user.name, req.body.user.firstname, req.body.user.tel, req.body.user.email, req.body.user.password, req.body.user.role];
         break;
       case 'client':
@@ -192,6 +197,9 @@ router.post('/api/user/auth',function(req,res,next){
         case 'magasinier':
           redirect = "/magasinier/";
           break;
+          case 'commercial':
+            redirect = "/commercial/";
+          break;
       }
       var token = jwt.sign({ id: utilisateur[0].idUtilisateur, role: utilisateur[0].role }, app.get('secret'), {expiresIn: 3600});
       return res.send({ success: true, message: 'Auth : ok', token : token, role : utilisateur[0].role, redirectPath: redirect});
@@ -239,7 +247,7 @@ router.put('/client/api/updateProfil', function(req, res, next) {
 router.put('/admin/api/user', function(req, res, next) {
 
   var dbConnection;
-
+  var oUserToModify = null;
   async.series([
     // On récupère la connection à la base de données
     function(endGetConnection) {
@@ -249,6 +257,15 @@ router.put('/admin/api/user', function(req, res, next) {
         dbConnection = connection;
 
         return endGetConnection();
+      });
+    },
+    function(endRetrieveUser) {
+      dbConnection.query("SELECT role FROM Utilisateur WHERE idUtilisateur=?", [ req.body.user._id], function(err, rows) {
+        if(err) return endRetrieveUser(err);
+        if(!rows || !rows.length) return endRetrieveUser(new Error("Utilisateur inconnu"));
+        
+        oUserToModify = rows[0];
+        return endRetrieveUser();
       });
     },
     // On commence une transaction SQL
@@ -271,7 +288,7 @@ router.put('/admin/api/user', function(req, res, next) {
     function(endUpdateUserRole) {
       var updateQuery;
       var paramsQuery;
-      switch (req.body.user.role.toLowerCase())
+      switch (oUserToModify.role.toLowerCase())
       {
         case 'administrateur':
           updateQuery = 'UPDATE administrateur set nom = ?, prenom = ?, tel = ?, mail = ?, mdp = ? where idUtilisateur = ?';
@@ -283,6 +300,10 @@ router.put('/admin/api/user', function(req, res, next) {
           break;
         case 'magasinier':
           updateQuery = 'UPDATE magasinier set nom = ?, prenom = ?, tel = ?, mail = ?, mdp = ? where idUtilisateur = ?';
+          paramsQuery = [req.body.user.name, req.body.user.firstname, req.body.user.tel, req.body.user.email, req.body.user.password, req.body.user._id]
+          break;
+        case 'commercial':
+          updateQuery = 'UPDATE commercial set nom = ?, prenom = ?, tel = ?, mail = ?, mdp = ? where idUtilisateur = ?';
           paramsQuery = [req.body.user.name, req.body.user.firstname, req.body.user.tel, req.body.user.email, req.body.user.password, req.body.user._id]
           break;
       }
@@ -298,7 +319,8 @@ router.put('/admin/api/user', function(req, res, next) {
     }
   ], function(err) {
     // Toutes les étapes ont été réalisés, on traite le cas où une erreur est survenue dans les fonctions précédentes sinon on envoi la réponse
-    if(err) { 
+    if(err) {
+      console.log(err);
       // On check que la connection a bien été ouvert: Dans le cas où la fonction responsable de la récupération de la connection échoue, c'est le seul moyen d'éviter un crash serveur
       if(!dbConnection) return next(err);
 
@@ -310,7 +332,10 @@ router.put('/admin/api/user', function(req, res, next) {
 
     // Si tout a fonctionné, on peut validé les changements en comittant la transaction SQL
     dbConnection.commit(function(err) {
-      if(err) return next(err);
+      if(err) { 
+        console.log(err);
+        return next(err);
+      }
 
       return res.json({ success: true});
     });
@@ -323,9 +348,7 @@ router.delete('/admin/api/user/:userId',function(req,res, next){
   if(err) return next(err);
 
     connection.query('delete FROM utilisateur WHERE idUtilisateur = ? ', [req.params.userId],function(err,rows,fields) {
-      if(err) {
-          return next(err);
-        }
+     if(err) { console.log(err); return next(err); }
         return res.send({ success: true });
       });
   });
@@ -341,17 +364,19 @@ router.get('/api/product/all',function(req,res,next){
    req.getConnection(function(err,connection) {
     if(err) return next(err);
 
-    connection.query('SELECT p.nom, p.reference, p.prix, p.tag, p.description, p.photo, c.nomCouleur, libelleTaille, p.quantiteStock, s.libelleSousCat FROM produit p,Sous_Categorie s ,Couleur c WHERE s.idSousCat = p.idSousCat and c.NomCouleur=p.NomCouleur',function(err,rows,fields) {
+    connection.query('SELECT p.nomProduit, p.reference, p.prix, p.tag, p.description, p.photo, c.nomCouleur, libelleTaille, p.quantiteStock, s.libelleSousCat FROM produit p,Sous_Categorie s ,Couleur c WHERE s.idSousCat = p.idSousCat and c.NomCouleur=p.NomCouleur',function(err,rows,fields) {
       if(err) return next(err);
 
       var my_produits = [];
       for (var i = 0; i < rows.length; i++)
       {
         var my_produit = { };
-        my_produit.size = [{size_name:rows[i].libelleTaille,quantity:rows[i].quantiteStock}];
+       /*my_produit.size = [{size_name:rows[i].libelleTaille,quantity:rows[i].quantiteStock}];*/
+        my_produit.size_name = rows[i].libelleTaille;
+        my_produit.quantity= rows[i].quantiteStock;
         my_produit._id = rows[i].reference;
         my_produit.subcat = rows[i].libelleSousCat;
-        my_produit.name = rows[i].nom;
+        my_produit.name = rows[i].nomProduit;
         my_produit.price = rows[i].prix;
         my_produit.tag = rows[i].tag;
         my_produit.description = rows[i].description;
@@ -369,7 +394,7 @@ router.get('/api/product/:product_id',function(req,res,next){
   req.getConnection(function(err,connection) {
     if(err) return next(err);
 
-    connection.query('SELECT p.nom, p.reference, p.prix, p.tag, p.description, p.photo, c.nomCouleur, libelleTaille, p.quantiteStock, s.libelleSousCat FROM produit p,Sous_Categorie s ,Couleur c where p.reference=\'' + req.params.product_id +'\'',function(err,rows,fiels){
+    connection.query('SELECT p.nomProduit, p.reference, p.prix, p.tag, p.description, p.photo, c.nomCouleur, libelleTaille, p.quantiteStock, s.libelleSousCat, f.nomFournisseur, u.nom FROM produit p,Sous_Categorie s ,Couleur c, fournisseur f, utilisateur u where p.idFournisseur = f.idFournisseur and p.idUtilisateur = u.idUtilisateur and p.nomCouleur=c.nomCouleur and p.idSousCat=s.idSousCat and p.reference=\'' + req.params.product_id +'\'',function(err,rows,fiels){
       var my_product = {};
 
 
@@ -386,7 +411,7 @@ router.get('/api/product/:product_id',function(req,res,next){
       if (rows.length > 0)
       {
         my_product._id = rows[0].reference;
-        my_product.name = rows[0].nom;
+        my_product.name = rows[0].nomProduit;
         my_product.size = [{size_name:rows[0].libelleTaille,quantity:rows[0].quantiteStock}];
         my_product.price = rows[0].prix;
         my_product.tag = rows[0].tag;
@@ -394,6 +419,8 @@ router.get('/api/product/:product_id',function(req,res,next){
         my_product.color = rows[0].nomCouleur;
         my_product.picture = rows[0].photo;
         my_product.subcat = rows[0].libelleSousCat;
+        my_product.fournisseur = rows[0].nomFournisseur;
+        my_product.magasinier = rows[0].nom;
       }
       res.json(my_product);
     });
@@ -406,7 +433,7 @@ router.get('/api/product/tag/:tag',function(req,res,next){
   req.getConnection(function(err,connection) {
     if(err) return next(err);
 
-    connection.query('Select reference,nom,libelleSousCat,tag,prix,description,photo,p.nomCouleur,libelleTaille,quantiteStock from produit p,couleur c,sous_categorie sc where c.NomCouleur=p.NomCouleur and sc.idSousCat=p.idSousCat and Tag =\''+req.params.tag+'\'',function(err,rows,fields){
+    connection.query('Select reference,nomProduit,libelleSousCat,tag,prix,description,photo,p.nomCouleur,libelleTaille,quantiteStock from produit p,couleur c,sous_categorie sc where c.NomCouleur=p.NomCouleur and sc.idSousCat=p.idSousCat and Tag =\''+req.params.tag+'\'',function(err,rows,fields){
       if(err) return next(err);
 
       var my_tagproducts = [];
@@ -414,7 +441,7 @@ router.get('/api/product/tag/:tag',function(req,res,next){
       {
         var my_tagproduct = { };
         my_tagproduct._id = rows[i].reference;
-        my_tagproduct.name = rows[i].nom;
+        my_tagproduct.name = rows[i].nomProduit;
         my_tagproduct.subcat = rows[i].libelleSousCat;
         my_tagproduct.tag = rows[i].tag;
         my_tagproduct.price = rows[i].prix;
@@ -436,13 +463,13 @@ router.get('/api/product/cat/:cat', function(req, res){
   
   req.getConnection(function(err, connection) {
   if (err) res.send(err);
-  connection.query('Select Reference, Nom, LibelleSousCat, Tag, Prix, Description, Photo, p.nomCouleur, libelleTaille, QuantiteStock from produit p, couleur c, sous_categorie sc where c.NomCouleur=p.NomCouleur and sc.idSousCat=p.idSousCat and LibelleSousCat =\''+req.params.cat+'\'', function(err, rows, fields){
+  connection.query('Select Reference, nomProduit, LibelleSousCat, Tag, Prix, Description, Photo, p.nomCouleur, libelleTaille, QuantiteStock from produit p, couleur c, sous_categorie sc where c.NomCouleur=p.NomCouleur and sc.idSousCat=p.idSousCat and LibelleSousCat =\''+req.params.cat+'\'', function(err, rows, fields){
     if(err) { console.log(err); return res.send(err); }
     var my_produits = [];
     for (i = 0; i < rows.length; i++){
       var my_produit = { };
       my_produit._id = rows[i].Reference;
-      my_produit.name = rows[i].Nom;
+      my_produit.name = rows[i].nomProduit;
       my_produit.subcat = rows[i].LibelleSousCat;
       my_produit.tag = rows[i].Tag;
       my_produit.price = rows[i].Prix;
@@ -608,12 +635,12 @@ router.get('/api/categorie/all',function(req,res,next){
 ////// methode : GET /////
 
 // Retourne tous les fournisseurs
-router.get('/commercial/api/fournisseurs', function(req,res,next){
+router.get('/admin/api/fournisseurs', function(req,res,next){
 
   req.getConnection(function(err,connection) {
     if(err) return next(err);
 
-    connection.query('SELECT * FROM fournisseurs',function(err,rows,fields) {
+    connection.query('SELECT * FROM fournisseur',function(err,rows,fields) {
       if(err) return next(err);
 
       var my_fournisseurs = [];
@@ -627,48 +654,86 @@ router.get('/commercial/api/fournisseurs', function(req,res,next){
         my_fournisseur.tel = rows[i].tel;
         my_fournisseur.zipcode = rows[i].CP;
         my_fournisseur.city = rows[i].ville;
+        my_fournisseur.email = rows[i].mail;
         
-        my_users.push(my_fournisseur);
+        my_fournisseurs.push(my_fournisseur);
       }
       res.json(my_fournisseurs);
     });
   })  
 });
 
-router.post('/commercial/api/addfourniseur',function(req, res, next) {
-  req.getConnection(function(err, connection) {
+// methode : GET Retourne l'utilisateur dont l'id est donnée
+router.get('/admin/api/fournisseurs/:_id',function(req,res,next){ 
+  
+  req.getConnection(function(err,connection) {
     if(err) return next(err);
 
+      connection.query('Select * FROM fournisseur where idFournisseur = ?', [req.params._id],function(err,rows,fields) {
+        if(err) {
+          return connection.rollback(function() {
+            return next(err);
+          });
+        }
+        var my_provider = {};
+
+        if (rows.length > 0) 
+        {
+          my_provider._id = rows[0].idFournisseur;
+          my_provider.name = rows[0].nomFournisseur;
+          my_provider.firstname = rows[0].prenom;
+          my_provider.address = rows[0].adresse;
+          my_provider.tel = rows[0].tel;
+          my_provider.zipcode = rows[0].CP;
+          my_provider.city = rows[0].ville;
+          my_provider.email = rows[0].mail;
+        }
+
+        res.json(my_provider);
+      });
+    });
+  });
+
+router.post('/admin/api/addfourniseur',function(req, res, next) {
+  req.getConnection(function(err, connection) {
+    if(err) { console.log(err); return next(err); }
+
       connection.query('call sp_createFournisseur(?,?,?,?,?,?,?)',[req.body.name, req.body.firstname, req.body.address, req.body.tel, req.body.zipcode, req.body.city, req.body.mail], function(err, result) { 
-      if(err) return next(err);
+        console.log(req.body.mail);
+      if(err) { console.log(err); return next(err); }
 
       return res.send({ success : true, message:"L'ajout c'est bien passé."});
     });
   });
 });
 
-router.put('/commercial/api/updatefourniseur',function(req,res,next){
+router.put('/admin/api/updatefourniseur',function(req,res,next){
   req.getConnection(function(err, connection) {
-      if(err) return next(err);
+      if(err) { console.log(err); return next(err); }
+      console.log(req.body.name);
+      console.log(req.body.firstname);
+      console.log(req.body.tel);
+      console.log(req.body.mail);
+      console.log(req.body.address);
+      console.log(req.body.zipcode);
+      console.log(req.body.city);
+      console.log(req.body._id);
+      connection.query('call sp_updateFournisseur(?,?,?,?,?,?,?,?)', [req.body.name, req.body.firstname, req.body.address, req.body.tel, req.body.zipcode,  req.body.city, req.body.mail, req.body._id], function(err, result) {
+        if(err) { console.log(err); return next(err); }
 
-      connection.query('call sp_updateFournisseur(?,?,?,?,?,?,?)', [req.body.name, req.body.firstname, req.body.user.tel, req.body.zipcode, req.body.city, req.body._id], function(err, result) {
-        if(err) return next(err);
-
-      return res.send({ success : true, message:"Update OK."});
+      return res.json({ success: true});
       });
   });
 });
 
 
-router.delete('/commercial/api/deletefourniseur/:_id',function(req,res, next){
+router.delete('/admin/api/deletefourniseur/:_id',function(req,res, next){
   req.getConnection(function(err,connection) {
   if(err) return next(err);
 
-    connection.query('delete FROM fournisseur WHERE idFournisseur = ? ', [req.params.Id],function(err,rows,fields) {
-      if(err) {
-          return next(err);
-        }
-        return res.send({ success: true });
+    connection.query('delete FROM fournisseur WHERE idFournisseur = ? ', [req.params._id],function(err,rows,fields) {
+      if(err) { console.log(err); return next(err); }
+        return res.json({ success: true});
       });
   });
 });
