@@ -24,11 +24,11 @@
                         <div class="pull-right">
                             <ul class="userMenu">
                                 <li>
-                                    <a ng-hide="!currentUser.token" href="#/login" data-target="modal-connexion" data-toggle="modal">
+                                    <a ng-hide="globals.currentUser.token" href="#/login" data-target="modal-connexion" data-toggle="modal">
                                         <span class="hidden-xs"> Connexion </span>
                                         <i class="glyphicon glyphicon-log-in hidden visible-xs"></i>
                                     </a>
-                                    <a href="" ng-show="!currentUser.token" ng-click="logout()" data-target="modal-connexion" data-toggle="modal">
+                                    <a href="" ng-show="globals.currentUser.token" ng-click="logout()" data-target="modal-connexion" data-toggle="modal">
                                         <span class="hidden-xs"> Déconnexion </span>
                                         <i class="glyphicon glyphicon-log-in hidden visible-xs"></i>
                                     </a>
@@ -58,7 +58,7 @@
         </div>
     </nav>
     <div class="container-fluid">
-      <div id="main" class="row">
+      <div id="main" class="row height-700px">
         <ng-view class="blueTitle">
         <!-- Corps de la page body-->
         </ng-view>

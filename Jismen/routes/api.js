@@ -394,35 +394,58 @@ router.get('/api/product/:product_id',function(req,res,next){
   req.getConnection(function(err,connection) {
     if(err) return next(err);
 
-    connection.query('SELECT p.nomProduit, p.reference, p.prix, p.tag, p.description, p.photo, c.nomCouleur, libelleTaille, p.quantiteStock, s.libelleSousCat, f.nomFournisseur, u.nom FROM produit p,Sous_Categorie s ,Couleur c, fournisseur f, utilisateur u where p.idFournisseur = f.idFournisseur and p.idUtilisateur = u.idUtilisateur and p.nomCouleur=c.nomCouleur and p.idSousCat=s.idSousCat and p.reference=\'' + req.params.product_id +'\'',function(err,rows,fiels){
-      var my_product = {};
+    connection.query(
+      'SELECT p.nomProduit, p.reference, p.prix, p.tag, p.description, p.photo, c.nomCouleur, libelleTaille, p.quantiteStock, s.libelleSousCat, f.nomFournisseur, f.idFournisseur, M.idUtilisateur' /*M.nom*/
+        + ' FROM produit p, Sous_Categorie s, Couleur c, fournisseur f, Magasinier M'
+        + ' where p.idFournisseur = f.idFournisseur'
+          // + 'and p.idUtilisateur = M.idUtilisateur '
+          + ' and p.nomCouleur = c.nomCouleur'
+          + ' and p.idSousCat = s.idSousCat'
+          + ' and p.reference = \'' + req.params.product_id +'\'',
+      function(err,rows,fiels){
+        var my_product = {};
+        // On vient d'appeler la fonction query,elle nous fournit le paramètre err. Si err est renseigné,quelque chose c'est mal passé. Il ne faut 
+        //pas continuer le code sinon on va accumuler les erreurs.
+        // Pour cela,on délègue généralement l'erreur à la prochaine route (qui est le error handler)
+        // Exemple:
+        // if(err) return next(err);
+        if(err) {
+          console.log(err);
+          return res.status(200).send("Error 500: MySQL");
+        }
 
+        if (rows.length > 0)
+        {
+          console.log(rows[0]);
+          connection.query(
+            'SELECT idUtilisateur, nom FROM Magasinier WHERE idUtilisateur = ' + rows[0].idUtilisateur + ';',
+            function(err, rows, fields){
+              if (err) {console.log(err)};
+              if (rows.length > 0) {
+                my_product.idMagasinier = rows[0].idUtilisateur;
+                my_product.magasinier = rows[0].nom;
+              } else {
+                my_product.idMagasinier = null;
+                my_product.magasinier = '';
+              }
+            }
+          )
 
-      // On vient d'appeler la fonction query,elle nous fournit le paramètre err. Si err est renseigné,quelque chose c'est mal passé. Il ne faut 
-      //pas continuer le code sinon on va accumuler les erreurs.
-      // Pour cela,on délègue généralement l'erreur à la prochaine route (qui est le error handler)
-      // Exemple:
-      // if(err) return next(err);
-      if(err) {
-        console.log(err);
-        return res.status(200).send("Error 500: MySQL");
-      }
-
-      if (rows.length > 0)
-      {
-        my_product._id = rows[0].reference;
-        my_product.name = rows[0].nomProduit;
-        my_product.size = [{size_name:rows[0].libelleTaille,quantity:rows[0].quantiteStock}];
-        my_product.price = rows[0].prix;
-        my_product.tag = rows[0].tag;
-        my_product.description = rows[0].description;
-        my_product.color = rows[0].nomCouleur;
-        my_product.picture = rows[0].photo;
-        my_product.subcat = rows[0].libelleSousCat;
-        my_product.fournisseur = rows[0].nomFournisseur;
-        my_product.magasinier = rows[0].nom;
-      }
-      res.json(my_product);
+          my_product._id = rows[0].reference;
+          my_product.name = rows[0].nomProduit;
+          my_product.size = [{size_name:rows[0].libelleTaille,quantity:rows[0].quantiteStock}];
+          my_product.price = rows[0].prix;
+          my_product.tag = rows[0].tag;
+          my_product.description = rows[0].description;
+          my_product.color = rows[0].nomCouleur;
+          my_product.picture = rows[0].photo;
+          my_product.subcat = rows[0].libelleSousCat;
+          my_product.fournisseur = rows[0].nomFournisseur;
+          my_product.idFournisseur = rows[0].idFournisseur;
+          // my_product.magasinier = rows[0].nom;
+          // my_product.idMagasinier = rows[0].idUtilisateur;
+        }
+        res.json(my_product);
     });
   });
 });
@@ -433,7 +456,7 @@ router.get('/api/product/tag/:tag',function(req,res,next){
   req.getConnection(function(err,connection) {
     if(err) return next(err);
 
-    connection.query('Select reference,nomProduit,libelleSousCat,tag,prix,description,photo,p.nomCouleur,libelleTaille,quantiteStock from produit p,couleur c,sous_categorie sc where c.NomCouleur=p.NomCouleur and sc.idSousCat=p.idSousCat and Tag =\''+req.params.tag+'\'',function(err,rows,fields){
+    connection.query('Select reference,nomProduit,libelleSousCat,tag,prix,description,photo,p.nomCouleur,libelleTaille,quantiteStock from produit p,couleur c,Sous_Categorie sc where c.NomCouleur=p.NomCouleur and sc.idSousCat=p.idSousCat and Tag =\''+req.params.tag+'\'',function(err,rows,fields){
       if(err) return next(err);
 
       var my_tagproducts = [];
@@ -463,7 +486,7 @@ router.get('/api/product/cat/:cat', function(req, res){
   
   req.getConnection(function(err, connection) {
   if (err) res.send(err);
-  connection.query('Select Reference, nomProduit, LibelleSousCat, Tag, Prix, Description, Photo, p.nomCouleur, libelleTaille, QuantiteStock from produit p, couleur c, sous_categorie sc where c.NomCouleur=p.NomCouleur and sc.idSousCat=p.idSousCat and LibelleSousCat =\''+req.params.cat+'\'', function(err, rows, fields){
+  connection.query('Select Reference, nomProduit, LibelleSousCat, Tag, Prix, Description, Photo, p.nomCouleur, libelleTaille, QuantiteStock from produit p, couleur c, Sous_Categorie sc where c.NomCouleur=p.NomCouleur and sc.idSousCat=p.idSousCat and LibelleSousCat =\''+req.params.cat+'\'', function(err, rows, fields){
     if(err) { console.log(err); return res.send(err); }
     var my_produits = [];
     for (i = 0; i < rows.length; i++){
@@ -507,7 +530,19 @@ router.put('/admin/api/product/',function(req,res,next){
   req.getConnection(function(err,connection) {
     if(err) return next(err);
 
-    connection.query('call sp_updateProduct(?,?,?,?,?,?,?,?)',[req.body.product.name, req.body.product.tag, req.body.product.price, req.body.product.description, req.body.product.color,  req.body.product.size[0].size_name, req.body.product.size[0].quantity, req.body.product._id],function(err){
+    connection.query('call sp_updateProduct(?,?,?,?,?,?,?,?,?,?)',
+      [req.body.product.name,
+       req.body.product.tag, 
+       req.body.product.price, 
+      req.body.product.description,
+      req.body.product.color,  
+      req.body.product.size[0].size_name, 
+      req.body.product.size[0].quantity, 
+      req.body.product.idFournisseur, 
+      req.body.product.idMagasinier, 
+      req.body.product._id],function(err){
+        console.log(req.body.product.fournisseur);
+        console.log(req.body.product.magasinier);
       if(err) return next(err);
 
       return res.json({ success: true});
@@ -600,9 +635,9 @@ router.get('/api/categorie/all',function(req,res,next){
   req.getConnection(function(err,connection) {
     if(err) return next(err);
 
-    connection.query('SELECT idCat,LibelleCat FROM categorie',function(err,rows,fields) {
+    connection.query('Select idCat,libelleCat from categorie',function(err,rows,fields) {
       if(err) return next(err);
-      connection.query('Select idCat,LibelleSousCat, idSousCat, sizeType from Sous_Categorie',function(err,souscat,fields){
+      connection.query('Select idCat,libelleSousCat, idSousCat, sizeType from Sous_Categorie',function(err,souscat,fields){
         if(err) return next(err);
                           
           var my_categories = [];
@@ -629,6 +664,57 @@ router.get('/api/categorie/all',function(req,res,next){
       });
     });
 });
+
+/************ Couleurs ***********/
+////// methode : GET //////
+
+// Retourne tous les couleurs
+router.get('/api/color/all',function(req,res,next){
+  
+  req.getConnection(function(err,connection) {
+    if(err) return next(err);
+
+    connection.query('SELECT nomCouleur FROM couleur',function(err,rows,fields) {
+      if(err) return next(err);      
+                          
+      var my_colors = [];
+      for (var i = 0; i < rows.length; i++)
+      {
+        var my_color = { };
+        my_color.color = rows[i].nomCouleur;
+        
+        my_colors.push(my_color);
+      }
+        res.json(my_colors);
+      });
+    });
+  });
+
+/************ Magasiniers ***********/
+////// methode : GET //////
+
+// Retourne tous les magasiniers
+router.get('/admin/api/magasiniers',function(req,res,next){
+  
+  req.getConnection(function(err,connection) {
+    if(err) return next(err);
+
+    connection.query('SELECT idUtilisateur, nom FROM magasinier',function(err,rows,fields) {
+      if(err) return next(err);      
+                          
+      var my_magasiniers = [];
+      for (var i = 0; i < rows.length; i++)
+      {
+        var my_magasinier = { };
+        my_magasinier.id = rows[i].idUtilisateur;
+        my_magasinier.name = rows[i].nom;
+        
+        my_magasiniers.push(my_magasinier);
+      }
+        res.json(my_magasiniers);
+      });
+    });
+  });
 
 /************ Fournisseurs ***********/
 

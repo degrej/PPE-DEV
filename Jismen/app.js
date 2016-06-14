@@ -12,6 +12,8 @@ var routes       = require('./routes/index');
 var api          = require('./routes/api');
 var admin        = require('./routes/admin'); 
 var client       = require('./routes/client');
+var commercial       = require('./routes/commercial');
+var magasinier       = require('./routes/magasinier');
 
 // connexion à la DB
 app.use(myConnection(mysql, config.mysql, 'single'));
@@ -31,6 +33,8 @@ app.use('/', routes);
 app.use('/', api);
 app.use('/admin/', admin);
 app.use('/client/', client);
+app.use('/commercial/', commercial);
+app.use('/magasinier/', magasinier);
 
 /*-----------------------------------------------------*
 |------------------- ERROR HANDLING -------------------|

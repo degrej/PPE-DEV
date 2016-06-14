@@ -16,9 +16,9 @@
 		secret: 'w1Nt3R15c0M1nNg'
 	};
 
-	_config.mongodb = {
+	/*_config.mongodb = {
 		connectionString: 'mongodb://localhost/jismen'
-	};
+	};*/
 
 	_config.mysql = {
 		host: 'localhost',

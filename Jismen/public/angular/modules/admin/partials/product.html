@@ -38,7 +38,9 @@
                 <div class="form-group">
                   <label class="col-xs-12 col-sm-3 control-label">Couleur :</label>
                   <div class="col-xs-12 col-sm-9">
-                    <input ng-model="product.color" Type="text" class="form-control" value="{{product.color}}" placeholder="Couleur...">
+                    <select class="form-control" ng-model="product.color">
+                      <option ng-repeat="color in colors"  value="{{color.color}}">{{color.color}}</option>
+                    </select>
                   </div>
                 </div>
                 <div ng-repeat="s in product.size">
@@ -57,19 +59,23 @@
                   <div class="form-group">
                     <label class="col-xs-12 col-sm-3 control-label">Quantité :</label>
                     <div class="col-xs-12 col-sm-9">
-                      <input ng-model="s.quantity" Type="text" class="form-control" value="{{s.quantity}}" placeholder="Quantity...">
+                      <input ng-model="s.quantity" type="text" class="form-control" value="{{s.quantity}}" placeholder="Quantity...">
                     </div>
                   </div>
                   <div class="form-group">
-                    <label class="col-xs-12 col-sm-3 control-label">Nom Fournisseur :</label>
+                    <label class="col-xs-12 col-sm-3 control-label">Fournisseur :</label>
                     <div class="col-xs-12 col-sm-9">
-                      <input ng-model="product.fournisseur" Type="text" class="form-control" value="{{product.fournisseur}}" placeholder="Nom Fournisseur...">
+                      <select ng-model="product.idFournisseur" convert-to-number class="form-control" placeholder="Nom fournisseur..." required>
+                        <option ng-repeat="fournisseur in fournisseurs" value="{{fournisseur.id}}">{{fournisseur.name}}</option>
+                      </select>
                     </div>
                   </div>
                   <div class="form-group">
-                    <label class="col-xs-12 col-sm-3 control-label">Nom Magasinier :</label>
+                    <label class="col-xs-12 col-sm-3 control-label">Magasinier :</label>
                     <div class="col-xs-12 col-sm-9">
-                      <input ng-model="product.magasinier" Type="text" class="form-control" value="{{product.magasinier}}" placeholder="Nom Magasinier...">
+                      <select ng-model="product.idMagasinier" convert-to-number class="form-control">
+                        <option ng-repeat="magasinier in magasiniers"  value="{{magasinier.id}}">{{magasinier.name}}</option>
+                      </select>
                     </div>
                   </div>
                 </div>
@@ -81,7 +87,7 @@
                 <button ng-confirm="Enregistrer les modifications ?" ng-disabled="productForm.$invalid" ng-click="modify(product)" type="submit" name="Modifier" class="btn btn-warning mg-b-15 col-xs-12">
                   <i class="glyphicon glyphicon-ok"></i> Modifier
                 </button>
-                <button ng-click="delete(product)" ng-confirm="Supprimer cet utilisateur ?" type="button" name="Supprimer" class="btn btn-danger mg-b-15 col-xs-12">
+                <button ng-click="delete(product)" ng-confirm="Supprimer ce produit ?" type="button" name="Supprimer" class="btn btn-danger mg-b-15 col-xs-12">
                   <i class="glyphicon glyphicon-remove"></i> Supprimer
                 </button>
                 <a href="#/products" class="btn btn-primary mg-b-15 col-xs-12">

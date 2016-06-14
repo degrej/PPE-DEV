@@ -1,3 +1,4 @@
+
 var adminServices = angular.module('adminServices', []);
 
 /***********************
@@ -205,6 +206,18 @@ adminServices.factory('categoriesFactory', ['$http', function($http){
   }
 }]);
 
+
+/***********************
+******* COLORS ******
+**************************/
+adminServices.factory('colorsFactory', ['$http', function($http){
+  return {
+    getAllColors: function(){
+      return $http.get('/api/color/all');
+    }
+  }
+}]);
+
 /***********************
 ******* FOURNISSEURS ******
 **************************/
@@ -215,6 +228,18 @@ adminServices.factory('fournisseursFactory', ['$http', function($http){
     }
   }
 }]);
+
+/***********************
+******* Magasinier ******
+**************************/
+adminServices.factory('magasiniersFactory', ['$http', function($http){
+  return {
+    getAllMagasiniers: function(){
+      return $http.get('/admin/api/magasiniers');
+    }
+  }
+}]);
+
 
 /***********************
 ******** COMMENTS *******

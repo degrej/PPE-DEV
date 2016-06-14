@@ -1,5 +1,11 @@
 var adminControllers = angular.module('adminControllers', []);
-
+admin.controller('LogInStateCtrl', ['$scope', '$rootScope', 'AuthenticationService',
+  function($scope, $rootScope, authenticationService){
+    authenticationService.loadUserData();
+    $scope.logOut = function(){
+      authenticationService.clearUserData();
+    };
+  }]);
 /****************
 ***** ADMIN ******
 *******************/
@@ -13,7 +19,7 @@ admin.controller('AdminCtrl', [
   // location sert à gérer les urls (ex redirection)
   // Factory convention de nomage entité de la base
 
-  authenticationService.loadUserData();
+  
   console.log($scope);
   usersFactory.getAllUsers()
   .success(function(users){$scope.users = users;})
@@ -250,8 +256,8 @@ function($scope, $location, usersFactory){
 **** PRODUCTS ****
 *******************/
 
-admin.controller('ProductsCtrl', ['$scope', '$http', '$location', 'productsFactory', 'categoriesFactory',
- function ($scope, $http, $location, productsFactory, categoriesFactory) {
+admin.controller('ProductsCtrl', ['$scope', '$http', '$location', 'productsFactory', 'categoriesFactory', 'colorsFactory',
+ function ($scope, $http, $location, productsFactory, categoriesFactory, colorsFactory) {
   $scope.recherche = "";
   categoriesFactory.getAllCategories().success(function(categories){
     $scope.categories = categories;
@@ -266,10 +272,24 @@ admin.controller('ProductsCtrl', ['$scope', '$http', '$location', 'productsFacto
   };
 }]);
 
-admin.controller('ProductCtrl', ['$scope', '$location','$http', '$routeParams', 'productsFactory', function($scope, $location, $http, $routeParams, productsFactory){
-  productsFactory.getProduct($routeParams.product).success(function(product){
+admin.controller('ProductCtrl', ['$scope', '$location','$http', '$routeParams', 'productsFactory', 'colorsFactory', 'fournisseursFactory', 'magasiniersFactory', function($scope, $location, $http, $routeParams, productsFactory, colorsFactory,fournisseursFactory,magasiniersFactory){
+  var getProductPromise = productsFactory.getProduct($routeParams.product);
+
+  getProductPromise.success(function(product){
     $scope.product = product;
+    console.log($scope.product);
     $scope.master = angular.copy(product);
+  });
+
+  colorsFactory.getAllColors().success(function(colors){
+    $scope.colors = colors;
+  });
+
+  fournisseursFactory.getAllFournisseurs().success(function(fournisseurs){
+      $scope.fournisseurs = fournisseurs;
+  });
+  magasiniersFactory.getAllMagasiniers().success(function(magasiniers){
+    $scope.magasiniers = magasiniers;
   });
 
   $scope.modify = function(product){

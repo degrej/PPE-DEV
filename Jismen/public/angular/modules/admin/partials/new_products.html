@@ -10,7 +10,7 @@
         <input ng-model="product.name" Type="text" class="form-control" value="{{product.name}}" placeholder="Nom..." required>
       </div>
       <div class="form-group col-md-6">
-        <label class="control-label">Prix<span class="red"> *</span> :</label>
+        <label class="control-label" min="2">Prix<span class="red"> *</span> :</label>
         <input ng-model="product.price" Type="number" class="form-control" value="{{product.prix}}" placeholder="Prix..." required>
       </div>
       <div class="form-group col-md-6">
