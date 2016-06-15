@@ -1,6 +1,14 @@
 var clientControllers = angular.module('clientControllers', []);
 
 
+clientControllers.controller('LogInStateCtrl', ['$scope', '$rootScope', 'AuthenticationService',
+  function($scope, $rootScope, authenticationService){
+    authenticationService.loadUserData();
+    $scope.logOut = function(){
+      authenticationService.clearUserData();
+    };
+  }]);
+
 clientControllers.controller('userCtrl', ['$scope', '$routeParams', '$http',function($scope, $routeParams, $http){
   
 }]);

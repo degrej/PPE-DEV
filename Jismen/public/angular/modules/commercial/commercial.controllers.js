@@ -6,3 +6,11 @@ commercialControllers.controller('commercialCtrl', [
 
   	 authenticationService.loadUserData(); //permet de retourner le token
   }]);
+
+commercialControllers.controller('LogInStateCtrl', ['$scope', '$rootScope', 'AuthenticationService',
+  function($scope, $rootScope, authenticationService){
+    authenticationService.loadUserData();
+    $scope.logOut = function(){
+      authenticationService.clearUserData();
+    };
+  }]);

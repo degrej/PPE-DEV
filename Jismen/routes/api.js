@@ -83,7 +83,9 @@ router.get('/admin/api/user/:user_id',function(req,res,next){
   req.getConnection(function(err,connection) {
     if(err) return next(err);
 
-      connection.query('Select U.idUtilisateur, U.nom, U.prenom, U.mail, U.role, U.mdp, U.tel, adresse, CP, ville from utilisateur U left join client c on C.idUtilisateur=U.idUtilisateur where U.idUtilisateur = ?', [req.params.user_id],function(err,rows,fields) {
+      connection.query('Select U.idUtilisateur, U.nom, U.prenom, U.mail, U.role, U.mdp, U.tel, adresse, CP, ville'
+        + ' from utilisateur U left join client c on C.idUtilisateur=U.idUtilisateur' 
+        + ' where U.idUtilisateur = ?', [req.params.user_id],function(err,rows,fields) {
         if(err) {
           return connection.rollback(function() {
             return next(err);
@@ -158,7 +160,14 @@ router.post('/api/user/register', function(req, res, next) {
   req.getConnection(function(err, connection) {
     if(err) return next(err);
 
-      connection.query('call sp_createClient(?,?,?,?,?,"client",?,?,?)',[req.body.name, req.body.firstname, req.body.tel, req.body.email, req.body.password, req.body.address, req.body.zipcode, req.body.city], function(err, result) { 
+      connection.query('call sp_createClient(?,?,?,?,?,"client",?,?,?)',[req.body.name, 
+        req.body.firstname, 
+        req.body.tel, 
+        req.body.email, 
+        req.body.password, 
+        req.body.address, 
+        req.body.zipcode, 
+        req.body.city], function(err, result) { 
       if(err) return next(err);
 
       return res.send({ success : true, message:"Votre inscription c'est bien passé. Veuillez vous connecter."});
@@ -172,7 +181,10 @@ router.post('/api/user/auth',function(req,res,next){
   req.getConnection(function(err,connection) {
     if(err) return next(err);
     console.log(req.body);
-    connection.query('Select idUtilisateur, prenom, mail, mdp, role from utilisateur where mail=?', [req.body.email], function(err, utilisateur) {
+    connection.query('Select idUtilisateur, nom, prenom, mail, mdp, role'
+    + ' from utilisateur'
+    + ' where mail=?', 
+      [req.body.email], function(err, utilisateur) {
       if(err) return next(err);
 
       if (!utilisateur || !utilisateur.length)
@@ -202,7 +214,7 @@ router.post('/api/user/auth',function(req,res,next){
           break;
       }
       var token = jwt.sign({ id: utilisateur[0].idUtilisateur, role: utilisateur[0].role }, app.get('secret'), {expiresIn: 3600});
-      return res.send({ success: true, message: 'Auth : ok', token : token, role : utilisateur[0].role, redirectPath: redirect});
+      return res.send({ success: true, message: 'Auth : ok', token : token, name : utilisateur[0].nom, firstname : utilisateur[0].prenom, role : utilisateur[0].role, redirectPath: redirect});
     });
   });
 });
@@ -211,7 +223,9 @@ router.get('/client/api/informations', function(req, res, next) {
   req.getConnection(function(err, connection) {
     if(err) return next(err);
 
-    connection.query('Select nom, prenom, mail, tel, adresse, CP, ville, mdp from client where idUtilisateur=?', [req.user.id], function(err, information) {
+    connection.query('Select nom, prenom, mail, tel, adresse, CP, ville, mdp' 
+      + ' from client'
+      + ' where idUtilisateur=?', [req.user.id], function(err, information) {
       if(err) return next(err);
 
       var informationUser = {};
@@ -234,7 +248,16 @@ router.put('/client/api/updateProfil', function(req, res, next) {
   req.getConnection(function(err, connection) {
     if(err) return next(err);
 
-    connection.query('call sp_updateClient(?,?,?,?,?,?,?,?,?)', [req.body.name, req.body.firstname, req.body.tel, req.body.email, req.body.password, req.body.address,req.body.zipcode, req.body.city, req.user.id], function(err){
+    connection.query('call sp_updateClient(?,?,?,?,?,?,?,?,?)', 
+      [req.body.name, 
+      req.body.firstname, 
+      req.body.tel, 
+      req.body.email, 
+      req.body.password, 
+      req.body.address,
+      req.body.zipcode, 
+      req.body.city, 
+      req.user.id], function(err){
       if(err) return next(err);
 
       return res.json({ success: true});
@@ -260,7 +283,9 @@ router.put('/admin/api/user', function(req, res, next) {
       });
     },
     function(endRetrieveUser) {
-      dbConnection.query("SELECT role FROM Utilisateur WHERE idUtilisateur=?", [ req.body.user._id], function(err, rows) {
+      dbConnection.query('SELECT role' 
+        + ' FROM Utilisateur' 
+        + ' WHERE idUtilisateur=?', [ req.body.user._id], function(err, rows) {
         if(err) return endRetrieveUser(err);
         if(!rows || !rows.length) return endRetrieveUser(new Error("Utilisateur inconnu"));
         
@@ -278,7 +303,13 @@ router.put('/admin/api/user', function(req, res, next) {
     },
     // ON met à jour les infos dans la table utilisateur
     function(endUpdateUser) {
-      dbConnection.query('UPDATE utilisateur set nom = ?, prenom = ?, tel = ?, mail = ?, mdp = ? where idUtilisateur = ?', [req.body.user.name, req.body.user.firstname, req.body.user.tel, req.body.user.email, req.body.user.password, req.body.user._id],function(err,rows,fields){
+      dbConnection.query('UPDATE utilisateur set nom = ?, prenom = ?, tel = ?, mail = ?, mdp = ?' 
+        + ' where idUtilisateur = ?', [req.body.user.name, 
+        req.body.user.firstname, 
+        req.body.user.tel, 
+        req.body.user.email, 
+        req.body.user.password, 
+        req.body.user._id],function(err,rows,fields){
         if(err) return endUpdateUser(err);
 
         return endUpdateUser();
@@ -364,7 +395,10 @@ router.get('/api/product/all',function(req,res,next){
    req.getConnection(function(err,connection) {
     if(err) return next(err);
 
-    connection.query('SELECT p.nomProduit, p.reference, p.prix, p.tag, p.description, p.photo, c.nomCouleur, libelleTaille, p.quantiteStock, s.libelleSousCat FROM produit p,Sous_Categorie s ,Couleur c WHERE s.idSousCat = p.idSousCat and c.NomCouleur=p.NomCouleur',function(err,rows,fields) {
+    connection.query('SELECT p.nomProduit, p.reference, p.prix, p.tag, p.description, p.photo, c.nomCouleur, libelleTaille,' 
+      + ' p.quantiteStock, s.libelleSousCat'
+      + ' FROM produit p,Sous_Categorie s ,Couleur c'
+      + ' WHERE s.idSousCat = p.idSousCat and c.NomCouleur=p.NomCouleur',function(err,rows,fields) {
       if(err) return next(err);
 
       var my_produits = [];
@@ -395,8 +429,8 @@ router.get('/api/product/:product_id',function(req,res,next){
     if(err) return next(err);
 
     connection.query(
-      'SELECT p.nomProduit, p.reference, p.prix, p.tag, p.description, p.photo, c.nomCouleur, libelleTaille, p.quantiteStock, s.libelleSousCat, f.nomFournisseur, f.idFournisseur, M.idUtilisateur' /*M.nom*/
-        + ' FROM produit p, Sous_Categorie s, Couleur c, fournisseur f, Magasinier M'
+      'SELECT p.nomProduit, p.reference, p.prix, p.tag, p.description, p.photo, c.nomCouleur, libelleTaille, p.quantiteStock, s.libelleSousCat, f.nomFournisseur, f.idFournisseur, m.idUtilisateur' /*M.nom*/
+        + ' FROM produit p, Sous_Categorie s, Couleur c, fournisseur f, Magasinier m'
         + ' where p.idFournisseur = f.idFournisseur'
           // + 'and p.idUtilisateur = M.idUtilisateur '
           + ' and p.nomCouleur = c.nomCouleur'
@@ -418,7 +452,9 @@ router.get('/api/product/:product_id',function(req,res,next){
         {
           console.log(rows[0]);
           connection.query(
-            'SELECT idUtilisateur, nom FROM Magasinier WHERE idUtilisateur = ' + rows[0].idUtilisateur + ';',
+            'SELECT idUtilisateur, nom'
+            + ' FROM Magasinier'
+            + ' WHERE idUtilisateur = ' + rows[0].idUtilisateur + ';',
             function(err, rows, fields){
               if (err) {console.log(err)};
               if (rows.length > 0) {
@@ -456,7 +492,9 @@ router.get('/api/product/tag/:tag',function(req,res,next){
   req.getConnection(function(err,connection) {
     if(err) return next(err);
 
-    connection.query('Select reference,nomProduit,libelleSousCat,tag,prix,description,photo,p.nomCouleur,libelleTaille,quantiteStock from produit p,couleur c,Sous_Categorie sc where c.NomCouleur=p.NomCouleur and sc.idSousCat=p.idSousCat and Tag =\''+req.params.tag+'\'',function(err,rows,fields){
+    connection.query('Select reference,nomProduit,libelleSousCat,tag,prix,description,photo,p.nomCouleur,libelleTaille,quantiteStock' 
+      + ' from produit p,couleur c,Sous_Categorie sc' 
+      + ' where c.NomCouleur=p.NomCouleur and sc.idSousCat=p.idSousCat and Tag =\''+req.params.tag+'\'',function(err,rows,fields){
       if(err) return next(err);
 
       var my_tagproducts = [];
@@ -486,7 +524,12 @@ router.get('/api/product/cat/:cat', function(req, res){
   
   req.getConnection(function(err, connection) {
   if (err) res.send(err);
-  connection.query('Select Reference, nomProduit, LibelleSousCat, Tag, Prix, Description, Photo, p.nomCouleur, libelleTaille, QuantiteStock from produit p, couleur c, Sous_Categorie sc where c.NomCouleur=p.NomCouleur and sc.idSousCat=p.idSousCat and LibelleSousCat =\''+req.params.cat+'\'', function(err, rows, fields){
+  connection.query('Select Reference, nomProduit, LibelleSousCat, Tag, Prix, Description, Photo, p.nomCouleur, libelleTaille,'
+    + ' QuantiteStock'
+    + ' from produit p, couleur c, Sous_Categorie sc'
+    + ' where c.NomCouleur=p.NomCouleur' 
+    + ' and sc.idSousCat=p.idSousCat' 
+    + ' and LibelleSousCat =\''+req.params.cat+'\'', function(err, rows, fields){
     if(err) { console.log(err); return res.send(err); }
     var my_produits = [];
     for (i = 0; i < rows.length; i++){
@@ -508,62 +551,6 @@ router.get('/api/product/cat/:cat', function(req, res){
   });
 });
 
-////// methode : POST //////
-
-// Crée un nouveau produit
-router.post('/admin/api/product/',function(req,res, next){
-  
-  req.getConnection(function(err, connection) {
-    if(err) return next(err);
-
-    connection.query('call sp_createProduct(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [req.body.reference, req.body.name, req.body.tag, req.body.price, req.body.description, req.body.picture, req.body.quantity, req.body.color, req.body.size_name, req.body.subcat, req.body.fournisseur, req.user.id], function(err,newproduct){
-      
-      if(err) return next(err);
-
-      return res.send({ success: true, message: "Produit bien ajouté."});
-    });
-  });
-});
-
-////// methode : PUT //////
-router.put('/admin/api/product/',function(req,res,next){
-  req.getConnection(function(err,connection) {
-    if(err) return next(err);
-
-    connection.query('call sp_updateProduct(?,?,?,?,?,?,?,?,?,?)',
-      [req.body.product.name,
-       req.body.product.tag, 
-       req.body.product.price, 
-      req.body.product.description,
-      req.body.product.color,  
-      req.body.product.size[0].size_name, 
-      req.body.product.size[0].quantity, 
-      req.body.product.idFournisseur, 
-      req.body.product.idMagasinier, 
-      req.body.product._id],function(err){
-        console.log(req.body.product.fournisseur);
-        console.log(req.body.product.magasinier);
-      if(err) return next(err);
-
-      return res.json({ success: true});
-
-    });
-  });
-});
-
-////// methode : DELETE //////
-router.delete('/admin/api/product/:productId',function(req,res,next){
-  req.getConnection(function(err,connection) {
-    if(err) return next(err);
-
-    connection.query('DELETE FROM produit WHERE reference = ?', [req.params.productId], function(err,rows,fields){
-      if(err) {
-          return next(err);
-        }
-        return res.send({ success: true });
-    });
-  });
-});
 
 /******* Comments *********/
 
@@ -664,6 +651,33 @@ router.get('/api/categorie/all',function(req,res,next){
       });
     });
 });
+
+/************ Sous catégorie ***********/
+////// methode : GET //////
+
+// Retourne tous les couleurs
+router.get('/api/souscat/all',function(req,res,next){
+  
+  req.getConnection(function(err,connection) {
+    if(err) return next(err);
+
+    connection.query('SELECT idSousCat, libelleSousCat FROM Sous_Categorie group by idSousCat',function(err,rows,fields) {
+      if(err) return next(err);      
+                          
+      var my_subcats = [];
+      for (var i = 0; i < rows.length; i++)
+      {
+        var my_subcat = { };
+        my_subcat.id = rows[i].idSousCat;
+        my_subcat.libelle = rows[i].libelleSousCat;
+        
+        my_subcats.push(my_subcat);
+      }
+        res.json(my_subcats);
+      });
+    });
+  });
+
 
 /************ Couleurs ***********/
 ////// methode : GET //////
@@ -823,5 +837,75 @@ router.delete('/admin/api/deletefourniseur/:_id',function(req,res, next){
       });
   });
 });
+
+////// methode : POST //////
+
+// Crée un nouveau produit
+router.post('/magasinier/api/product/',function(req,res, next){
+  
+  req.getConnection(function(err, connection) {
+    if(err) return next(err);
+
+    connection.query('call sp_createProduct(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', 
+      [req.body.reference,
+      req.body.name,
+      req.body.tag, 
+      req.body.price, 
+      req.body.description, 
+      req.body.picture, 
+      req.body.quantity, 
+      req.body.color, 
+      req.body.size_name, 
+      req.body.subcat, 
+      req.body.fournisseur, 
+      req.user.id], function(err,newproduct){
+      
+      if(err) return next(err);
+
+      return res.send({ success: true, message: "Produit bien ajouté."});
+    });
+  });
+});
+
+////// methode : PUT //////
+router.put('/magasinier/api/product/',function(req,res,next){
+  req.getConnection(function(err,connection) {
+    if(err) return next(err);
+
+    connection.query('call sp_updateProduct(?,?,?,?,?,?,?,?,?,?)',
+      [req.body.product.name,
+       req.body.product.tag, 
+       req.body.product.price, 
+      req.body.product.description,
+      req.body.product.color,  
+      req.body.product.size[0].size_name, 
+      req.body.product.size[0].quantity, 
+      req.body.product.idFournisseur, 
+      req.body.product.idMagasinier, 
+      req.body.product._id],function(err){
+        console.log(req.body.product.fournisseur);
+        console.log(req.body.product.magasinier);
+      if(err) return next(err);
+
+      return res.json({ success: true});
+
+    });
+  });
+});
+
+////// methode : DELETE //////
+router.delete('/magasinier/api/product/:productId',function(req,res,next){
+  req.getConnection(function(err,connection) {
+    if(err) return next(err);
+
+    connection.query('DELETE FROM produit WHERE reference = ?', [req.params.productId], function(err,rows,fields){
+      if(err) {
+          return next(err);
+        }
+        return res.send({ success: true });
+    });
+  });
+});
+
 
 module.exports = router;

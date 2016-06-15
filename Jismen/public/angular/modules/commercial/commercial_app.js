@@ -1,7 +1,7 @@
 var commercial = angular.module('commercial_app', ['ngRoute', 'ngCookies', 'commercialControllers', 'commercialServices', 'authenticationServices']);
 
 commercial.config(['$httpProvider', function($httpProvider){
-  //$httpProvider.interceptors.push('tokenInterceptor');
+  $httpProvider.interceptors.push('tokenInterceptor');
 }]);
 
 commercial.config(['$routeProvider', '$locationProvider', function($routeProvider, $locationProvider){

@@ -5,15 +5,15 @@ var homepageControllers = angular.module('homepageControllers', []);
 homepageControllers.controller('homepageCtrl', ['$scope', '$http', 'productFactory', function($scope, $http, productFactory){
   $scope.slides = [
     {
-      image: 'http://img.cache-cache.fr/products_images/prod_27336/h_robe-sans-manches-dentelle-faux-bustier-cache-cache-NOIR-front-44.jpg',
+      image: './images/index1.jpg',
       text : 'robe courte'
     },
     {
-      image: 'http://img.cache-cache.fr/products_images/prod_20945/g_robe-bustier-decollete-coeur-cache-cache-VERMILLON-onroll-1174.jpg',
+      image: './images/index2.jpg',
       text : 'robe bustier'
     },
     {
-      image: 'http://img.cache-cache.fr/products_images/prod_20985/h_robe-debardeur-droite-cache-cache-noir-onroll-44.jpg',
+      image: './images/index3.jpg',
       text : 'robe débardeur'
     }
   ];

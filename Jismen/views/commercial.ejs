@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr" ng-app="admin_app">
+<html lang="fr" ng-app="commercial_app">
   <head>
     <% include html_head %>
     <title>Jismen - Commercial</title>
@@ -22,14 +22,14 @@
                         </div>
                     </div>
                     <div class="col-xs-6">
-                        <div class="pull-right">
+                        <div class="pull-right" ng-controller="LogInStateCtrl">
                             <ul class="userMenu">
                                 <li>
                                     <a href="#/login" ng-hide="globals.currentUser.token" data-target="modal-connexion" data-toggle="modal">
                                         <span class="hidden-xs"> Connexion </span>
                                         <i class="glyphicon glyphicon-log-in hidden visible-xs"></i>
                                     </a>
-                                    <a href="" ng-show="globals.currentUser.token" ng-click="logout()" data-target="modal-connexion" data-toggle="modal">
+                                    <a href="" ng-show="globals.currentUser.token" ng-click="logOut()" data-target="modal-connexion" data-toggle="modal">
                                         <span class="hidden-xs"> Déconnexion </span>
                                         <i class="glyphicon glyphicon-log-in hidden visible-xs"></i>
                                     </a>
@@ -52,8 +52,7 @@
             </div>
             <div class="collapse navbar-collapse" id="navbar-collapsible">
               <ul class="nav navbar-nav">
-                <li><a href="#/users">Utilisateurs</a></li>
-                <li><a href="#/products">Articles</a></li>
+                <li><a href="#/users">Fournisseurs</a></li>
               </ul>
             </div>
         </div>
